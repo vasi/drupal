@@ -539,7 +539,7 @@ class ConfigSchemaTest extends KernelTestBase {
   }
 
   /**
-   * Tests saving config when the type is wrapped by a dynamic type.
+   * Tests dynamic config schema type with multiple sub-key references.
    */
   public function testConfigSaveWithWrappingSchemaDoubleBrackets() {
     $untyped_values = [
