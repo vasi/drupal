@@ -38,6 +38,9 @@ class UserEntityCallbacksTest extends WebTestBase {
    */
   protected $anonymous;
 
+  /**
+   * {@inheritdoc}
+   */
   protected function setUp() {
     parent::setUp();
 
@@ -56,7 +59,7 @@ class UserEntityCallbacksTest extends WebTestBase {
     $this->config('user.settings')->set('anonymous', $name)->save();
     $this->assertEqual($this->anonymous->label(), $name, 'The variable anonymous should be used for name of uid 0');
     $this->assertEqual($this->anonymous->getDisplayName(), $name, 'The variable anonymous should be used for display name of uid 0');
-    $this->assertEqual($this->anonymous->getUserName(), '', 'The raw anonymous user name should be empty string');
+    $this->assertEqual($this->anonymous->getUsername(), '', 'The raw anonymous user name should be empty string');
 
     // Set to test the altered username.
     \Drupal::state()->set('user_hooks_test_user_format_name_alter', TRUE);
