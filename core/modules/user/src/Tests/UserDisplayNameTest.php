@@ -66,3 +66,4 @@ class UserDisplayNameTest extends WebTestBase {
     $this->assertRaw($this->account->getDisplayName(), 'User edit page shows altered user display name.');
   }
 
+}
