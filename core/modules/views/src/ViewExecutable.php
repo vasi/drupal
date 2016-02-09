@@ -434,6 +434,13 @@ class ViewExecutable implements \Serializable {
   protected $routeProvider;
 
   /**
+   * The entity type of the base table, if available.
+   *
+   * @var \Drupal\Core\Entity\EntityType|false
+   */
+  protected $baseEntityType;
+
+  /**
    * Constructs a new ViewExecutable object.
    *
    * @param \Drupal\views\ViewEntityInterface $storage
@@ -964,6 +971,26 @@ class ViewExecutable implements \Serializable {
       $base_tables[$handler->definition['base']] = TRUE;
     }
     return $base_tables;
+  }
+
+  /**
+   * Returns the entity type of the base table, if available.
+   *
+   * @return \Drupal\Core\Entity\EntityType|false
+   */
+  public function getBaseEntityType() {
+    if (!isset($this->baseEntityType)) {
+      $view_base_table = $this->storage->get('base_table');
+      $views_data = Views::viewsData()->get($view_base_table);
+      if (!empty($views_data['table']['entity type'])) {
+        $entity_type_id = $views_data['table']['entity type'];
+        $this->baseEntityType = \Drupal::entityTypeManager()->getDefinition($entity_type_id);
+      }
+      else {
+        $this->baseEntityType = FALSE;
+      }
+    }
+    return $this->baseEntityType;
   }
 
   /**
