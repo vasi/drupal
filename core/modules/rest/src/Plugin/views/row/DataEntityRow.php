@@ -112,4 +112,11 @@ class DataEntityRow extends RowPluginBase {
     return $this->view;
   }
 
+  /**
+   * {@inheritdoc}
+   */
+  public function query() {
+    parent::query();
+    $this->getEntityTranslationRenderer()->query($this->view->getQuery());
+  }
 }
