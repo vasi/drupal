@@ -119,4 +119,5 @@ class DataEntityRow extends RowPluginBase {
     parent::query();
     $this->getEntityTranslationRenderer()->query($this->view->getQuery());
   }
+
 }

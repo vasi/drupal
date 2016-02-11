@@ -977,11 +977,12 @@ class ViewExecutable implements \Serializable {
    * Returns the entity type of the base table, if available.
    *
    * @return \Drupal\Core\Entity\EntityType|false
+   *   The entity type of the base table, or FALSE if none exists.
    */
   public function getBaseEntityType() {
     if (!isset($this->baseEntityType)) {
       $view_base_table = $this->storage->get('base_table');
-      $views_data = Views::viewsData()->get($view_base_table);
+      $views_data = $this->viewsData->get($view_base_table);
       if (!empty($views_data['table']['entity type'])) {
         $entity_type_id = $views_data['table']['entity type'];
         $this->baseEntityType = \Drupal::entityTypeManager()->getDefinition($entity_type_id);
