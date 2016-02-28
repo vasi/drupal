@@ -436,7 +436,7 @@ class ViewExecutable implements \Serializable {
   /**
    * The entity type of the base table, if available.
    *
-   * @var \Drupal\Core\Entity\EntityType|false
+   * @var \Drupal\Core\Entity\EntityTypeInterface|false
    */
   protected $baseEntityType;
 
