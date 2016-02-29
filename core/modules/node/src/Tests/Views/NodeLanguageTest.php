@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Contains \Drupal\node\Tests\Views\NodeLanguageTest.
+   * Contains \Drupal\node\Tests\Views\NodeLanguageTest.
  */
 
 namespace Drupal\node\Tests\Views;
@@ -10,6 +10,7 @@ namespace Drupal\node\Tests\Views;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\language\Entity\ConfigurableLanguage;
+use Drupal\node\Entity\Node;
 use Drupal\views\Plugin\views\PluginBase;
 use Drupal\views\Tests\ViewTestData;
 use Drupal\views\Views;
@@ -24,7 +25,7 @@ class NodeLanguageTest extends NodeTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = array('language', 'node_test_views');
+  public static $modules = array('language', 'node_test_views', 'path');
 
   /**
    * Views used by this test.
@@ -273,6 +274,38 @@ class NodeLanguageTest extends NodeTestBase {
     $this->assertLanguageNames();
     $config->set('display.default.display_options.fields.langcode.native_language', TRUE)->save();
     $this->assertLanguageNames(TRUE);
+  }
+
+  /**
+   * Tests translation of path fields.
+   */
+  public function testPaths() {
+    // Give the nodes some paths.
+    $paths = [];
+    foreach (Node::loadMultiple() as $nid => $node) {
+      foreach ($node->getTranslationLanguages() as $language) {
+        $langcode = $language->getId();
+        $translation = $node->getTranslation($langcode);
+        $path = '/path' . $langcode . $nid;
+        $translation->set('path', $path);
+        $paths[$langcode][] = $path;
+      }
+      $node->save();
+    }
+
+    // Test the page.
+    $this->drupalGet('test-language');
+    $message = 'French/Spanish page';
+    foreach ($paths as $langcode => $list) {
+      foreach ($list as $path) {
+        if ($langcode == 'en') {
+          $this->assertNoText($path, $path . ' does not appear on ' . $message);
+        }
+        else {
+          $this->assertText($path, $path . ' does appear on ' . $message);
+        }
+      }
+    }
   }
 
   /**
