@@ -14,6 +14,7 @@ use Drupal\Core\Database\DatabaseException;
 use Drupal\Core\DependencyInjection\DependencySerializationTrait;
 use Drupal\Core\Logger\LogMessageParserInterface;
 use Drupal\Core\Logger\RfcLoggerTrait;
+use Psr\Log\InvalidArgumentException;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -56,6 +57,32 @@ class DbLog implements LoggerInterface {
   }
 
   /**
+   * Ensure that all placeholder values are strings.
+   *
+   * @param array &$placeholders
+   *   The context to be logged.
+   */
+  protected function stringifyPlaceholders(array &$context) {
+    foreach ($context as $key => &$value) {
+      $stringable = is_null($value) || is_scalar($value);
+      if (is_resource($value)) {
+        // is_scalar() is documented to possibly return TRUE for resources.
+        $stringable = FALSE;
+      }
+      if (is_object($value) && method_exists($value, '__toString')) {
+        $stringable = TRUE;
+      }
+
+      if ($stringable) {
+        $value = (string)$value;
+      }
+      else {
+        throw new InvalidArgumentException('Log context contains non-string value for key "' . $key . '"');
+      }
+    }
+  }
+
+  /**
    * {@inheritdoc}
    */
   public function log($level, $message, array $context = array()) {
@@ -65,6 +92,7 @@ class DbLog implements LoggerInterface {
     // Convert PSR3-style messages to SafeMarkup::format() style, so they can be
     // translated too in runtime.
     $message_placeholders = $this->parser->parseMessagePlaceholders($message, $context);
+    $this->stringifyPlaceholders($message_placeholders);
 
     try {
       $this->connection
