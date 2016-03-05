@@ -8,9 +8,12 @@
 namespace Drupal\views\Plugin\views\field;
 
 use Drupal\Core\Access\AccessManagerInterface;
+use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\Render\BubbleableMetadata;
 use Drupal\Core\Routing\RedirectDestinationTrait;
+use Drupal\views\Entity\Render\EntityTranslationRenderTrait;
 use Drupal\views\ResultRow;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -22,6 +25,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 abstract class LinkBase extends FieldPluginBase {
 
   use RedirectDestinationTrait;
+  use EntityTranslationRenderTrait;
 
   /**
    * The access manager service.
@@ -38,6 +42,20 @@ abstract class LinkBase extends FieldPluginBase {
   protected $currentUser;
 
   /**
+   * The entity manager.
+   *
+   * @var \Drupal\Core\Entity\EntityManagerInterface
+   */
+  public $entityManager;
+
+  /**
+   * The language manager.
+   *
+   * @var \Drupal\Core\Language\LanguageManagerInterface
+   */
+  protected $languageManager;
+
+  /**
    * Constructs a LinkBase object.
    *
    * @param array $configuration
@@ -48,10 +66,16 @@ abstract class LinkBase extends FieldPluginBase {
    *   The plugin implementation definition.
    * @param \Drupal\Core\Access\AccessManagerInterface $access_manager
    *   The access manager.
+   * @param \Drupal\Core\Entity\EntityManagerInterface $entity_manager
+   *   The entity manager.
+   * @param \Drupal\Core\Language\LanguageManagerInterface $language_manager
+   *   The language manager.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, AccessManagerInterface $access_manager) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, AccessManagerInterface $access_manager, EntityManagerInterface $entity_manager, LanguageManagerInterface $language_manager) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
     $this->accessManager = $access_manager;
+    $this->entityManager = $entity_manager;
+    $this->languageManager = $language_manager;
   }
 
   /**
@@ -62,7 +86,9 @@ abstract class LinkBase extends FieldPluginBase {
       $configuration,
       $plugin_id,
       $plugin_definition,
-      $container->get('access_manager')
+      $container->get('access_manager'),
+      $container->get('entity.manager'),
+      $container->get('language_manager')
     );
   }
 
@@ -121,6 +147,7 @@ abstract class LinkBase extends FieldPluginBase {
    */
   public function query() {
     $this->addAdditionalFields();
+    $this->getEntityTranslationRenderer()->query($this->view->getQuery());
   }
 
   /**
@@ -182,11 +209,8 @@ abstract class LinkBase extends FieldPluginBase {
    *   A view result row.
    */
   protected function addLangcode(ResultRow $row) {
-    $entity = $this->getEntity($row);
-    $langcode_key = $entity ? $entity->getEntityType()->getKey('langcode') : FALSE;
-    if ($langcode_key && isset($this->aliases[$langcode_key])) {
-      $this->options['alter']['language'] = $entity->language();
-    }
+    $langcode = $this->getEntityTranslationRenderer()->getLangcode($row);
+    $this->options['alter']['language'] = $this->languageManager->getLanguage($langcode);
   }
 
   /**
@@ -197,6 +221,34 @@ abstract class LinkBase extends FieldPluginBase {
    */
   protected function getDefaultLabel() {
     return $this->t('link');
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getEntityTypeId() {
+    return $this->getEntityType();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function getEntityManager() {
+    return $this->entityManager;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function getLanguageManager() {
+    return $this->languageManager;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function getView() {
+    return $this->view;
   }
 
 }
