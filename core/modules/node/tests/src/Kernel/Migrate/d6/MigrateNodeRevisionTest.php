@@ -2,7 +2,6 @@
 
 namespace Drupal\Tests\node\Kernel\Migrate\d6;
 
-use Drupal\language\Entity\ConfigurableLanguage;
 use Drupal\migrate\Plugin\MigrationInterface;
 use Drupal\migrate\Row;
 use Drupal\node\NodeInterface;
@@ -25,10 +24,7 @@ class MigrateNodeRevisionTest extends MigrateNodeTestBase {
    */
   protected function setUp() {
     parent::setUp();
-    // The revision migrations include translations, so we need to install
-    // the necessary languages.
-    ConfigurableLanguage::createFromLangcode('en')->save();
-    ConfigurableLanguage::createFromLangcode('fr')->save();
+    $this->configureLanguages();
   }
 
   /**

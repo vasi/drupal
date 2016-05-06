@@ -2,6 +2,7 @@
 
 namespace Drupal\Tests\migrate_drupal\Kernel\d6;
 
+use Drupal\language\Entity\ConfigurableLanguage;
 use Drupal\Tests\migrate_drupal\Kernel\MigrateDrupalTestBase;
 
 /**
@@ -80,12 +81,26 @@ abstract class MigrateDrupal6TestBase extends MigrateDrupalTestBase {
   }
 
   /**
+   * Configure the languages necessary for translations.
+   */
+  protected function configureLanguages() {
+    ConfigurableLanguage::createFromLangcode('en')->save();
+    ConfigurableLanguage::createFromLangcode('fr')->save();
+  }
+
+  /**
    * Executes all content migrations.
    *
    * @param bool $include_revisions
    *   If TRUE, migrates node revisions.
    */
   protected function migrateContent($include_revisions = FALSE) {
+    // The revision migrations include translations, so we need to install
+    // the necessary languages.
+    if ($include_revisions) {
+      $this->configureLanguages();
+    }
+
     $this->migrateUsers(FALSE);
     $this->migrateFields();
 
