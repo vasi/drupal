@@ -41,6 +41,10 @@ class EntityRevision extends EntityContentBase {
       $row->getDestinationProperty($this->getKey('revision'));
     if (!empty($revision_id) && ($entity = $this->storage->loadRevision($revision_id))) {
       $entity->setNewRevision(FALSE);
+
+      // Check if we're the default.
+      $default = $this->storage->load($entity->id());
+      $entity->isDefaultRevision($default->getRevisionId() === $revision_id);
     }
     else {
       $entity_id = $row->getDestinationProperty($this->getKey('id'));
@@ -54,9 +58,10 @@ class EntityRevision extends EntityContentBase {
 
       $entity->enforceIsNew(FALSE);
       $entity->setNewRevision(TRUE);
+      $entity->isDefaultRevision(FALSE);
     }
+
     $this->updateEntity($entity, $row);
-    $entity->isDefaultRevision(FALSE);
     return $entity;
   }
 
@@ -65,7 +70,13 @@ class EntityRevision extends EntityContentBase {
    */
   protected function save(ContentEntityInterface $entity, array $old_destination_id_values = array()) {
     $entity->save();
-    return array($entity->getRevisionId());
+    $ids = array($entity->getRevisionId());
+
+    if (isset($this->configuration['translated']) && $this->configuration['translated']) {
+      $ids[] = $entity->language()->getId();
+    }
+
+    return $ids;
   }
 
   /**
@@ -74,9 +85,21 @@ class EntityRevision extends EntityContentBase {
   public function getIds() {
     if ($key = $this->getKey('revision')) {
       $ids[$key]['type'] = 'integer';
-      return $ids;
     }
-    throw new MigrateException('This entity type does not support revisions.');
+    else {
+      throw new MigrateException('This entity type does not support revisions.');
+    }
+
+    if (isset($this->configuration['translated']) && $this->configuration['translated']) {
+      if ($key = $this->getKey('langcode')) {
+        $ids[$key]['type'] = 'string';
+      }
+      else {
+        throw new MigrateException('This entity type does not support translation.');
+      }
+    }
+
+    return $ids;
   }
 
 }

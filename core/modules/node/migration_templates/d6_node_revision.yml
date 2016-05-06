@@ -38,3 +38,4 @@ process:
 
 destination:
   plugin: entity_revision:node
+  translated: true

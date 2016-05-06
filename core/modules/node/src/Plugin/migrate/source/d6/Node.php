@@ -13,11 +13,10 @@ use Drupal\migrate_drupal\Plugin\migrate\source\DrupalSqlBase;
  * )
  */
 class Node extends DrupalSqlBase {
-
   /**
-   * The join options between the node and the node_revisions table.
+   * An expression for the translation set of a node.
    */
-  const JOIN = 'n.vid = nr.vid';
+  const NODE_TRANSLATION_SET = 'CASE n.tnid WHEN 0 THEN n.nid ELSE n.tnid END';
 
   /**
    * The default filter format.
@@ -37,12 +36,11 @@ class Node extends DrupalSqlBase {
    * {@inheritdoc}
    */
   public function query() {
+    $query = $this->translationQuery();
+
     // Select node in its last revision.
-    $query = $this->select('node_revisions', 'nr')
-      ->fields('n', array(
-        'nid',
+    $query->fields('n', array(
         'type',
-        'language',
         'status',
         'created',
         'changed',
@@ -50,11 +48,9 @@ class Node extends DrupalSqlBase {
         'promote',
         'moderate',
         'sticky',
-        'tnid',
         'translate',
       ))
       ->fields('nr', array(
-        'vid',
         'title',
         'body',
         'teaser',
@@ -64,10 +60,9 @@ class Node extends DrupalSqlBase {
       ));
     $query->addField('n', 'uid', 'node_uid');
     $query->addField('nr', 'uid', 'revision_uid');
-    $query->innerJoin('node', 'n', static::JOIN);
 
     if (isset($this->configuration['node_type'])) {
-      $query->condition('type', $this->configuration['node_type']);
+      $query->condition('n.type', $this->configuration['node_type']);
     }
 
     return $query;
@@ -87,6 +82,7 @@ class Node extends DrupalSqlBase {
   public function fields() {
     $fields = array(
       'nid' => $this->t('Node ID'),
+      'vid' => $this->t('Revision ID'),
       'type' => $this->t('Type'),
       'title' => $this->t('Title'),
       'body' => $this->t('Body'),
@@ -101,7 +97,6 @@ class Node extends DrupalSqlBase {
       'sticky' => $this->t('Sticky at top of lists'),
       'revision' => $this->t('Create new revision'),
       'language' => $this->t('Language (fr, en, ...)'),
-      'tnid' => $this->t('The translation set id for this node'),
       'timestamp' => $this->t('The timestamp the latest revision of this node was created.'),
     );
     return $fields;
@@ -233,7 +228,7 @@ class Node extends DrupalSqlBase {
         // the time being.
         ->isNotNull($field['field_name'] . '_' . $columns[0])
         ->condition('nid', $node->getSourceProperty('nid'))
-        ->condition('vid', $node->getSourceProperty('vid'))
+        ->condition('vid', $node->getSourceProperty('field_vid'))
         ->execute()
         ->fetchAllAssoc('delta');
     }
@@ -249,6 +244,46 @@ class Node extends DrupalSqlBase {
     $ids['nid']['type'] = 'integer';
     $ids['nid']['alias'] = 'n';
     return $ids;
+  }
+
+  /**
+   * Build a query to get the maximum vid of each translation set.
+   *
+   * @return \Drupal\Core\Database\Query\SelectInterface
+   *   The generated query.
+   */
+  protected function maxVidQuery() {
+    $subquery = $this->select('node', 'n');
+    $subquery->addExpression(self::NODE_TRANSLATION_SET, 'translation_set');
+    $subquery->groupBy('translation_set');
+    $subquery->addExpression('MAX(vid)', 'vid');
+    return $subquery;
+  }
+
+  /**
+   * Build a query that yields the rows we want to migrate.
+   *
+   * It should have a node table 'n', and a node_revision table 'nr'.
+   *
+   * @return \Drupal\Core\Database\Query\SelectInterface
+   *   The generated query.
+   */
+  protected function translationQuery() {
+    $query = $this->select('node', 'n');
+    $query->fields('n', ['nid', 'language']);
+
+    // Only yield the default node for each translation set.
+    $query->where('n.tnid = 0 OR n.nid = n.tnid');
+
+    // Claim our vid is the maximum vid of our translation set.
+    $query->join($this->maxVidQuery(), 'max_vid', 'n.nid = max_vid.translation_set');
+    $query->fields('max_vid', ['vid']);
+
+    // Use the real vid for finding fields.
+    $query->join('node_revisions', 'nr', 'n.vid = nr.vid');
+    $query->addField('nr', 'vid', 'field_vid');
+
+    return $query;
   }
 
 }

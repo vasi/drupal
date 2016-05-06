@@ -50,6 +50,22 @@ class EntityRevisionTest extends UnitTestCase {
     $this->storage = $this->prophesize('\Drupal\Core\Entity\EntityStorageInterface');
     $this->entityManager = $this->prophesize('\Drupal\Core\Entity\EntityManagerInterface');
     $this->fieldTypeManager = $this->prophesize('\Drupal\Core\Field\FieldTypePluginManagerInterface');
+
+    // Add a mock for getting keys.
+    $entity_type = $this->prophesize('\Drupal\Core\Entity\EntityTypeInterface');
+    $entity_type->getKey('id')->willReturn('nid');
+    $entity_type->getKey('revision')->willReturn('vid');
+    $this->storage->getEntityType()->willReturn($entity_type->reveal());
+
+    // Add the default revision of the entity.
+    // Claim to be revision 12 of node 5.
+    $default = $this->prophesize('\Drupal\Core\Entity\EntityInterface')
+      ->willImplement('\Drupal\Core\Entity\RevisionableInterface');
+    $default->getRevisionId()
+      ->willReturn(12);
+    $default->id()->willReturn(5);
+    $this->storage->load(5)
+      ->willReturn($default->reveal());
   }
 
   /**
@@ -62,6 +78,14 @@ class EntityRevisionTest extends UnitTestCase {
     // Return a dummy because we don't care what gets called.
     $entity = $this->prophesize('\Drupal\Core\Entity\EntityInterface')
       ->willImplement('\Drupal\Core\Entity\RevisionableInterface');
+
+    // Make sure we check whether or not we're the default.
+    $entity->id()->willReturn(5);
+    $this->storage->load(5)->shouldBeCalled();
+    $entity->isDefaultRevision(TRUE)->shouldBeCalled();
+
+    $entity->setNewRevision(FALSE)->shouldBeCalled();
+
     // Assert that the first ID from the destination values is used to load the
     // entity.
     $this->storage->loadRevision(12)
@@ -81,18 +105,18 @@ class EntityRevisionTest extends UnitTestCase {
     $entity = $this->prophesize('\Drupal\Core\Entity\EntityInterface')
       ->willImplement('\Drupal\Core\Entity\RevisionableInterface');
 
-    $entity_type = $this->prophesize('\Drupal\Core\Entity\EntityTypeInterface');
-    $entity_type->getKey('id')->willReturn('nid');
-    $entity_type->getKey('revision')->willReturn('vid');
-    $this->storage->getEntityType()->willReturn($entity_type->reveal());
-
     // Assert we load the correct revision.
     $this->storage->loadRevision(2)
       ->shouldBeCalled()
       ->willReturn($entity->reveal());
-    // Make sure its set as an update and not the default revision.
-    $entity->setNewRevision(FALSE)->shouldBeCalled();
+
+    // Make sure we check whether or not we're the default.
+    $entity->id()->willReturn(5);
+    $this->storage->load(5)->shouldBeCalled();
     $entity->isDefaultRevision(FALSE)->shouldBeCalled();
+
+    // Make sure its set as an update.
+    $entity->setNewRevision(FALSE)->shouldBeCalled();
 
     $row = new Row(['nid' => 1, 'vid' => 2], ['nid' => 1, 'vid' => 2]);
     $row->setDestinationProperty('vid', 2);
@@ -108,11 +132,6 @@ class EntityRevisionTest extends UnitTestCase {
     $destination = $this->getEntityRevisionDestination([]);
     $entity = $this->prophesize('\Drupal\Core\Entity\EntityInterface')
       ->willImplement('\Drupal\Core\Entity\RevisionableInterface');
-
-    $entity_type = $this->prophesize('\Drupal\Core\Entity\EntityTypeInterface');
-    $entity_type->getKey('id')->willReturn('nid');
-    $entity_type->getKey('revision')->willReturn('vid');
-    $this->storage->getEntityType()->willReturn($entity_type->reveal());
 
     // Enforce is new should be disabled.
     $entity->enforceIsNew(FALSE)->shouldBeCalled();
@@ -137,11 +156,6 @@ class EntityRevisionTest extends UnitTestCase {
    */
   public function testGetEntityLoadFailure() {
     $destination = $this->getEntityRevisionDestination([]);
-
-    $entity_type = $this->prophesize('\Drupal\Core\Entity\EntityTypeInterface');
-    $entity_type->getKey('id')->willReturn('nid');
-    $entity_type->getKey('revision')->willReturn('vid');
-    $this->storage->getEntityType()->willReturn($entity_type->reveal());
 
     // Return a failed load and make sure we don't fail and we return FALSE.
     $this->storage->load(1)

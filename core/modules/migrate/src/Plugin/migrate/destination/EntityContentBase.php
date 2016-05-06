@@ -7,11 +7,13 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Field\FieldTypePluginManagerInterface;
+use Drupal\Core\TypedData\TranslatableInterface;
 use Drupal\Core\TypedData\TypedDataInterface;
 use Drupal\migrate\Plugin\MigrationInterface;
 use Drupal\migrate\MigrateException;
 use Drupal\migrate\Plugin\MigrateIdMapInterface;
 use Drupal\migrate\Row;
+
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -122,6 +124,19 @@ class EntityContentBase extends Entity {
    *   The row object to update from.
    */
   protected function updateEntity(EntityInterface $entity, Row $row) {
+    if ($entity instanceof TranslatableInterface) {
+      $property = $this->storage->getEntityType()->getKey('langcode');
+
+      if ($row->hasDestinationProperty($property)) {
+        $language = $row->getDestinationProperty($property);
+
+        if (!$entity->hasTranslation($language)) {
+          $entity->addTranslation($language);
+        }
+        $entity = $entity->getTranslation($language);
+      }
+    }
+
     // If the migration has specified a list of properties to be overwritten,
     // clone the row with an empty set of destination values, and re-add only
     // the specified properties.

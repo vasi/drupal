@@ -2,6 +2,7 @@
 
 namespace Drupal\Tests\node\Unit\Plugin\migrate\source\d6;
 
+use Drupal\node\Plugin\migrate\source\d6\NodeRevision;
 use Drupal\Tests\migrate\Unit\MigrateSqlSourceTestCase;
 
 /**
@@ -11,24 +12,12 @@ use Drupal\Tests\migrate\Unit\MigrateSqlSourceTestCase;
  */
 class NodeRevisionTest extends MigrateSqlSourceTestCase {
 
-  const PLUGIN_CLASS = 'Drupal\node\Plugin\migrate\source\d6\NodeRevision';
+  const PLUGIN_CLASS = NodeRevision::class;
 
-  // The fake Migration configuration entity.
   protected $migrationConfiguration = [
     'id' => 'test',
-    // The fake configuration for the source.
     'source' => [
       'plugin' => 'd6_node_revision',
-    ],
-    'sourceIds' => [
-      'vid' => [
-        'alias' => 'v',
-      ],
-    ],
-    'destinationIds' => [
-      'vid' => [
-        // This is where the field schema would go.
-      ],
     ],
   ];
 
@@ -68,6 +57,42 @@ class NodeRevisionTest extends MigrateSqlSourceTestCase {
         'uid' => 1,
         'title' => 'title for revision 2 (node 2)',
       ],
+      // A translation set.
+      [
+        'nid' => 3,
+        'type' => 'article',
+        'language' => 'en',
+        'status' => 1,
+        'created' => 1279309100,
+        'changed' => 1279309300,
+        'comment' => 0,
+        'promote' => 1,
+        'moderate' => 0,
+        'sticky' => 0,
+        'tnid' => 3,
+        'translate' => 0,
+        'vid' => 2,
+        'uid' => 1,
+        'title' => 'title for revision 7 (node 3)',
+      ],
+      [
+        'nid' => 4,
+        'type' => 'article',
+        'language' => 'fr',
+        'status' => 1,
+        'created' => 1279309200,
+        'changed' => 1279309200,
+        'comment' => 0,
+        'promote' => 1,
+        'moderate' => 0,
+        'sticky' => 0,
+        'tnid' => 3,
+        'translate' => 0,
+        'vid' => 2,
+        'uid' => 1,
+        'title' => 'title for revision 6 (node 4)',
+      ],
+
     ],
     'node_revisions' => [
       [
@@ -114,13 +139,46 @@ class NodeRevisionTest extends MigrateSqlSourceTestCase {
         'format' => 1,
         'timestamp' => 1279308993,
       ],
+      // Translations.
+      [
+        'nid' => 3,
+        'vid' => 5,
+        'uid' => 1,
+        'title' => 'title for revision 5 (node 3)',
+        'body' => 'body for revision 5 (node 3)',
+        'teaser' => 'teaser for revision 5 (node 3)',
+        'log' => 'log for revision 5 (node 3)',
+        'format' => 1,
+        'timestamp' => 1279309100,
+      ],
+      [
+        'nid' => 3,
+        'vid' => 7,
+        'uid' => 1,
+        'title' => 'title for revision 7 (node 3)',
+        'body' => 'body for revision 7 (node 3)',
+        'teaser' => 'teaser for revision 7 (node 3)',
+        'log' => 'log for revision 7 (node 3)',
+        'format' => 1,
+        'timestamp' => 1279309300,
+      ],
+      [
+        'nid' => 4,
+        'vid' => 6,
+        'uid' => 1,
+        'title' => 'title for revision 6 (node 4)',
+        'body' => 'body for revision 6 (node 4)',
+        'teaser' => 'teaser for revision 6 (node 4)',
+        'log' => 'log for revision 6 (node 4)',
+        'format' => 1,
+        'timestamp' => 1279309200,
+      ],
     ],
   ];
 
-  // There are three revisions of nid 1, but the NodeRevision source ignores
-  // the current revision. So only two revisions will be returned here. nid 2
-  // is ignored because it only has one revision (the current one).
-  protected $expectedResults = [
+  // There are three revisions of nid 1, and one for node 2. Results are sorted
+  // by vid.
+    protected $expectedResults = [
     [
       // Node fields.
       'nid' => 1,
@@ -133,7 +191,6 @@ class NodeRevisionTest extends MigrateSqlSourceTestCase {
       'promote' => 1,
       'moderate' => 0,
       'sticky' => 0,
-      'tnid' => 0,
       'translate' => 0,
       // Node revision fields.
       'vid' => 1,
@@ -144,6 +201,30 @@ class NodeRevisionTest extends MigrateSqlSourceTestCase {
       'teaser' => 'teaser for revision 1 (node 1)',
       'log' => 'log for revision 1 (node 1)',
       'format' => 1,
+      'field_vid' => 1,
+    ],
+    [
+      'nid' => 2,
+      'type' => 'article',
+      'language' => 'en',
+      'status' => 1,
+      'created' => 1279290908,
+      'changed' => 1279308993,
+      'comment' => 0,
+      'promote' => 1,
+      'moderate' => 0,
+      'sticky' => 0,
+      'translate' => 0,
+      'vid' => 2,
+      'node_uid' => 1,
+      'revision_uid' => 1,
+      'title' => 'title for revision 2 (node 2)',
+      'body' => 'body for revision 2 (node 2)',
+      'teaser' => 'teaser for revision 2 (node 2)',
+      'log' => 'log for revision 2 (node 2)',
+      'format' => 1,
+      'timestamp' => 1279308993,
+      'field_vid' => 2,
     ],
     [
       // Node fields.
@@ -157,7 +238,6 @@ class NodeRevisionTest extends MigrateSqlSourceTestCase {
       'promote' => 1,
       'moderate' => 0,
       'sticky' => 0,
-      'tnid' => 0,
       'translate' => 0,
       // Node revision fields.
       'vid' => 3,
@@ -168,6 +248,146 @@ class NodeRevisionTest extends MigrateSqlSourceTestCase {
       'teaser' => 'teaser for revision 3 (node 1)',
       'log' => 'log for revision 3 (node 1)',
       'format' => 1,
+      'field_vid' => 3,
+    ],
+    [
+      'nid' => 1,
+      'type' => 'page',
+      'language' => 'en',
+      'status' => 1,
+      'created' => 1279051598,
+      'changed' => 1279051598,
+      'comment' => 2,
+      'promote' => 1,
+      'moderate' => 0,
+      'sticky' => 0,
+      'translate' => 0,
+      'vid' => 4,
+      'node_uid' => 1,
+      'revision_uid' => 1,
+      'title' => 'title for revision 4 (node 1)',
+      'body' => 'body for revision 4 (node 1)',
+      'teaser' => 'teaser for revision 4 (node 1)',
+      'log' => 'log for revision 4 (node 1)',
+      'format' => 1,
+      'timestamp' => 1279051598,
+      'field_vid' => 4,
+    ],
+    // Translations add extra revisions.
+    [
+      'nid' => 3,
+      'type' => 'article',
+      'language' => 'en',
+      'status' => 1,
+      'created' => 1279309100,
+      'changed' => 1279309300,
+      'comment' => 0,
+      'promote' => 1,
+      'moderate' => 0,
+      'sticky' => 0,
+      'translate' => 0,
+      'vid' => 5,
+      'node_uid' => 1,
+      'revision_uid' => 1,
+      'title' => 'title for revision 5 (node 3)',
+      'body' => 'body for revision 5 (node 3)',
+      'teaser' => 'teaser for revision 5 (node 3)',
+      'log' => 'log for revision 5 (node 3)',
+      'format' => 1,
+      'timestamp' => 1279309100,
+      'field_vid' => 5,
+    ],
+    [
+      'nid' => 3,
+      'type' => 'article',
+      'language' => 'en',
+      'status' => 1,
+      'created' => 1279309100,
+      'changed' => 1279309300,
+      'comment' => 0,
+      'promote' => 1,
+      'moderate' => 0,
+      'sticky' => 0,
+      'translate' => 0,
+      'vid' => 6,
+      'node_uid' => 1,
+      'revision_uid' => 1,
+      'title' => 'title for revision 5 (node 3)',
+      'body' => 'body for revision 5 (node 3)',
+      'teaser' => 'teaser for revision 5 (node 3)',
+      'log' => 'log for revision 5 (node 3)',
+      'format' => 1,
+      'timestamp' => 1279309100,
+      'field_vid' => 5,
+    ],
+    [
+      'nid' => 3,
+      'type' => 'article',
+      'language' => 'fr',
+      'status' => 1,
+      'created' => 1279309100,
+      'changed' => 1279309300,
+      'comment' => 0,
+      'promote' => 1,
+      'moderate' => 0,
+      'sticky' => 0,
+      'translate' => 0,
+      'vid' => 6,
+      'node_uid' => 1,
+      'revision_uid' => 1,
+      'title' => 'title for revision 6 (node 4)',
+      'body' => 'body for revision 6 (node 4)',
+      'teaser' => 'teaser for revision 6 (node 4)',
+      'log' => 'log for revision 6 (node 4)',
+      'format' => 1,
+      'timestamp' => 1279309200,
+      'field_vid' => 6,
+    ],
+    [
+      'nid' => 3,
+      'type' => 'article',
+      'language' => 'en',
+      'status' => 1,
+      'created' => 1279309100,
+      'changed' => 1279309300,
+      'comment' => 0,
+      'promote' => 1,
+      'moderate' => 0,
+      'sticky' => 0,
+      'translate' => 0,
+      'vid' => 7,
+      'node_uid' => 1,
+      'revision_uid' => 1,
+      'title' => 'title for revision 7 (node 3)',
+      'body' => 'body for revision 7 (node 3)',
+      'teaser' => 'teaser for revision 7 (node 3)',
+      'log' => 'log for revision 7 (node 3)',
+      'format' => 1,
+      'timestamp' => 1279309300,
+      'field_vid' => 7,
+    ],
+    [
+      'nid' => 3,
+      'type' => 'article',
+      'language' => 'fr',
+      'status' => 1,
+      'created' => 1279309100,
+      'changed' => 1279309300,
+      'comment' => 0,
+      'promote' => 1,
+      'moderate' => 0,
+      'sticky' => 0,
+      'translate' => 0,
+      'vid' => 7,
+      'node_uid' => 1,
+      'revision_uid' => 1,
+      'title' => 'title for revision 6 (node 4)',
+      'body' => 'body for revision 6 (node 4)',
+      'teaser' => 'teaser for revision 6 (node 4)',
+      'log' => 'log for revision 6 (node 4)',
+      'format' => 1,
+      'timestamp' => 1279309200,
+      'field_vid' => 6,
     ],
   ];
 

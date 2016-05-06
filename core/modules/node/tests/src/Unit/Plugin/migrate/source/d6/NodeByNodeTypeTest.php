@@ -40,7 +40,6 @@ class NodeByNodeTypeTest extends MigrateSqlSourceTestCase {
       'promote' => 1,
       'moderate' => 0,
       'sticky' => 0,
-      'tnid' => 0,
       'translate' => 0,
       // Node revision fields.
       'body' => 'body for node 1',
@@ -64,7 +63,6 @@ class NodeByNodeTypeTest extends MigrateSqlSourceTestCase {
       'promote' => 1,
       'moderate' => 0,
       'sticky' => 0,
-      'tnid' => 0,
       'translate' => 0,
       // Node revision fields.
       'body' => 'body for node 2',
@@ -101,7 +99,6 @@ class NodeByNodeTypeTest extends MigrateSqlSourceTestCase {
       'promote' => 1,
       'moderate' => 0,
       'sticky' => 0,
-      'tnid' => 0,
       'translate' => 0,
       // Node revision fields.
       'body' => 'body for node 5',
@@ -113,6 +110,8 @@ class NodeByNodeTypeTest extends MigrateSqlSourceTestCase {
     // Add another row with an article node and make sure it is not migrated.
 
     foreach ($database_contents as $k => $row) {
+      $row['tnid'] = 0;
+
       foreach (array('nid', 'vid', 'title', 'uid', 'body', 'teaser', 'format', 'timestamp', 'log') as $field) {
         $this->databaseContents['node_revisions'][$k][$field] = $row[$field];
         switch ($field) {
