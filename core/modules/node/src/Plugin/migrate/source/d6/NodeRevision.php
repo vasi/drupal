@@ -37,4 +37,14 @@ class NodeRevision extends Node {
     return $ids;
   }
 
+  /**
+   * {@inheritdoc}
+   */
+  protected function translationQuery() {
+    $query = $this->select('node_revisions', 'nr');
+    $query->innerJoin('node', 'n', static::JOIN);
+    $query->addField('nr', 'vid');
+    return $query;
+  }
+
 }

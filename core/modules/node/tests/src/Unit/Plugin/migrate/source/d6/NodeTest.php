@@ -98,6 +98,29 @@ class NodeTest extends MigrateSqlSourceTestCase {
         ),
       ),
     ),
+    array(
+      'nid' => 6,
+      'vid' => 7,
+      'type' => 'story',
+      'language' => 'en',
+      'title' => 'node title 6',
+      'uid' => 1,
+      'status' => 1,
+      'created' => 1279290909,
+      'changed' => 1279308994,
+      'comment' => 0,
+      'promote' => 1,
+      'moderate' => 0,
+      'sticky' => 0,
+      'tnid' => 6,
+      'translate' => 0,
+      // Node revision fields.
+      'body' => 'body for node 6',
+      'teaser' => 'body for node 6',
+      'log' => '',
+      'timestamp' => 1279308994,
+      'format' => 1,
+    ),
   );
 
   /**
@@ -148,22 +171,114 @@ class NodeTest extends MigrateSqlSourceTestCase {
         'status' => TRUE,
       ),
     );
-    foreach ($this->expectedResults as $k => $row) {
-      foreach (array('nid', 'vid', 'title', 'uid', 'body', 'teaser', 'format', 'timestamp', 'log') as $field) {
-        $this->databaseContents['node_revisions'][$k][$field] = $row[$field];
-        switch ($field) {
-          case 'nid': case 'vid':
-            break;
-          case 'uid':
-            $this->databaseContents['node_revisions'][$k]['uid']++;
-            break;
-          default:
-            unset($row[$field]);
-            break;
+    $this->databaseContents['node'] = [
+      [
+        'nid' => 1,
+        'vid' => 1,
+        'type' => 'page',
+        'language' => 'en',
+        'title' => 'node title 1',
+        'uid' => 1,
+        'status' => 1,
+        'created' => 1279051598,
+        'changed' => 1279051598,
+        'comment' => 2,
+        'promote' => 1,
+        'moderate' => 0,
+        'sticky' => 0,
+        'translate' => 0,
+        'tnid' => 0,
+      ],
+      [
+        'nid' => 2,
+        'vid' => 2,
+        'type' => 'page',
+        'language' => 'en',
+        'title' => 'node title 2',
+        'uid' => 1,
+        'status' => 1,
+        'created' => 1279290908,
+        'changed' => 1279308993,
+        'comment' => 0,
+        'promote' => 1,
+        'moderate' => 0,
+        'sticky' => 0,
+        'translate' => 0,
+        'tnid' => 0,
+      ],
+      [
+        'nid' => 5,
+        'vid' => 5,
+        'type' => 'story',
+        'language' => 'en',
+        'title' => 'node title 5',
+        'uid' => 1,
+        'status' => 1,
+        'created' => 1279290908,
+        'changed' => 1279308993,
+        'comment' => 0,
+        'promote' => 1,
+        'moderate' => 0,
+        'sticky' => 0,
+        'translate' => 0,
+        'tnid' => 0,
+      ],
+      [
+        'nid' => 6,
+        'vid' => 6,
+        'type' => 'story',
+        'language' => 'en',
+        'title' => 'node title 6',
+        'uid' => 1,
+        'status' => 1,
+        'created' => 1279290909,
+        'changed' => 1279308994,
+        'comment' => 0,
+        'promote' => 1,
+        'moderate' => 0,
+        'sticky' => 0,
+        'translate' => 0,
+        'tnid' => 6,
+      ],
+      [
+        'nid' => 7,
+        'vid' => 7,
+        'type' => 'story',
+        'language' => 'fr',
+        'title' => 'node title 7',
+        'uid' => 1,
+        'status' => 1,
+        'created' => 1279290910,
+        'changed' => 1279308995,
+        'comment' => 0,
+        'promote' => 1,
+        'moderate' => 0,
+        'sticky' => 0,
+        'translate' => 0,
+        'tnid' => 6,
+      ],
+    ];
+
+    foreach ($this->databaseContents['node'] as $k => $row) {
+      // Find the equivalent row from expected results.
+      $result_row = NULL;
+      foreach ($this->expectedResults as $result) {
+        if (in_array($result['nid'], [$row['nid'], $row['tnid']])) {
+          $result_row = $result;
+          break;
         }
       }
-      $this->databaseContents['node'][$k] = $row;
+
+      // Populate node_revisions.
+      foreach (array('nid', 'vid', 'title', 'uid', 'body', 'teaser', 'format', 'timestamp', 'log') as $field) {
+        $value = isset($row[$field]) ? $row[$field] : $result_row[$field];
+        $this->databaseContents['node_revisions'][$k][$field] = $value;
+        if ($field == 'uid') {
+          $this->databaseContents['node_revisions'][$k]['uid']++;
+        }
+      }
     }
+
     array_walk($this->expectedResults, function (&$row) {
       $row['node_uid'] = $row['uid'];
       $row['revision_uid'] = $row['uid'] + 1;

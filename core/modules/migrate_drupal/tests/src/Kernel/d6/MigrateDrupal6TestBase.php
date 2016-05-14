@@ -93,6 +93,7 @@ abstract class MigrateDrupal6TestBase extends MigrateDrupalTestBase {
    *   If TRUE, migrates node revisions.
    */
   protected function migrateContent($include_revisions = FALSE) {
+    $this->executeMigrations(['language']);
     $this->migrateUsers(FALSE);
     $this->migrateFields();
 

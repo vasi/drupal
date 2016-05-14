@@ -5,6 +5,7 @@ namespace Drupal\Tests\node\Kernel\Migrate\d6;
 use Drupal\Core\Database\Database;
 use Drupal\migrate\Plugin\MigrateIdMapInterface;
 use Drupal\node\Entity\Node;
+use Drupal\node\NodeInterface;
 use Drupal\Tests\file\Kernel\Migrate\d6\FileMigrationTestTrait;
 
 /**
@@ -78,6 +79,15 @@ class MigrateNodeTest extends MigrateNodeTestBase {
     $this->assertIdentical('http://groups.drupal.org/', $node->field_test_link->uri);
     $this->assertIdentical('Drupal Groups', $node->field_test_link->title);
     $this->assertIdentical([], $node->field_test_link->options['attributes']);
+
+    // Test that translations are working.
+    $node = Node::load(9);
+    $this->assertTrue($node instanceof NodeInterface);
+    $this->assertIdentical('en', $node->langcode->value);
+    $this->assertIdentical('The Real McCoy', $node->title->value);
+
+    // Node 10 is a translation of node 9, and should not be imported separately.
+    $this->assertNull(Node::load(10));
 
     // Rerun migration with invalid link attributes and a different URL and
     // title. If only the attributes are changed the error does not occur.
