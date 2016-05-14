@@ -121,6 +121,29 @@ class NodeTest extends MigrateSqlSourceTestCase {
       'timestamp' => 1279308994,
       'format' => 1,
     ),
+    array(
+      'nid' => 6,
+      'vid' => 7,
+      'type' => 'story',
+      'language' => 'fr',
+      'title' => 'node title 7',
+      'uid' => 1,
+      'status' => 1,
+      'created' => 1279290910,
+      'changed' => 1279308995,
+      'comment' => 0,
+      'promote' => 1,
+      'moderate' => 0,
+      'sticky' => 0,
+      'tnid' => 6,
+      'translate' => 0,
+      // Node revision fields.
+      'body' => 'body for node 7',
+      'teaser' => 'body for node 7',
+      'log' => '',
+      'timestamp' => 1279308995,
+      'format' => 1,
+    ),
   );
 
   /**
@@ -263,7 +286,7 @@ class NodeTest extends MigrateSqlSourceTestCase {
       // Find the equivalent row from expected results.
       $result_row = NULL;
       foreach ($this->expectedResults as $result) {
-        if (in_array($result['nid'], [$row['nid'], $row['tnid']])) {
+        if (in_array($result['nid'], [$row['nid'], $row['tnid']]) && $result['language'] == $row['language']) {
           $result_row = $result;
           break;
         }
