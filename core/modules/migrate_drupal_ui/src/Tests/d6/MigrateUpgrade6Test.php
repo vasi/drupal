@@ -14,6 +14,13 @@ use Drupal\migrate_drupal_ui\Tests\MigrateUpgradeTestBase;
 class MigrateUpgrade6Test extends MigrateUpgradeTestBase {
 
   /**
+   * Modules to enable.
+   *
+   * @var array
+   */
+  public static $modules = ['language'];
+
+  /**
    * {@inheritdoc}
    */
   protected function setUp() {
@@ -39,8 +46,9 @@ class MigrateUpgrade6Test extends MigrateUpgradeTestBase {
       'comment' => 3,
       'comment_type' => 2,
       'contact_form' => 5,
+      'configurable_language' => 5,
       'editor' => 2,
-      'field_config' => 62,
+      'field_config' => 63,
       'field_storage_config' => 43,
       'file' => 7,
       'filter_format' => 7,
@@ -56,7 +64,7 @@ class MigrateUpgrade6Test extends MigrateUpgradeTestBase {
       'menu' => 8,
       'taxonomy_term' => 6,
       'taxonomy_vocabulary' => 6,
-      'tour' => 1,
+      'tour' => 4,
       'user' => 7,
       'user_role' => 6,
       'menu_link_content' => 4,
