@@ -457,7 +457,8 @@ class MigrateSqlIdMapTest extends MigrateTestCase {
     }
     foreach ($rows as $row) {
       $values = array_combine($db_keys, $row);
-      $values['source_ids_hash'] = uniqid();
+      $source_values = array_slice($row, 0, count($source_keys));
+      $values['source_ids_hash'] = $this->getIdMap()->getSourceIDsHash($source_values);
       $this->saveMap($values);
     }
 
@@ -526,13 +527,24 @@ class MigrateSqlIdMapTest extends MigrateTestCase {
       $this->fail('Too many source IDs should throw');
     }
     catch (MigrateException $e) {
+      $this->assertEquals("Extra unknown items in source IDs", $e->getMessage());
     }
     try {
       $id_map->lookupDestinationIds(['nid' => 1, 'aaa' => '2']);
       $this->fail('Unknown source ID key should throw');
     }
     catch (MigrateException $e) {
+      $this->assertEquals("Extra unknown items in source IDs", $e->getMessage());
     }
+
+    // Verify that we are looking up by source_id_hash when all source IDs are
+    // passed in.
+    $id_map->getDatabase()->update($id_map->mapTableName())
+      ->condition('sourceid1', 1)
+      ->condition('sourceid2', 'en')
+      ->fields([TestSqlIdMap::SOURCE_IDS_HASH => uniqid()])
+      ->execute();
+    $this->assertNotEquals([[101, 'en']], $id_map->lookupDestinationIds([1, 'en']));
   }
 
   /**

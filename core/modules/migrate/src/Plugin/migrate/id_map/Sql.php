@@ -529,16 +529,14 @@ class Sql extends PluginBase implements MigrateIdMapInterface, ContainerFactoryP
       return array();
     }
 
-    $query = $this->getDatabase()->select($this->mapTableName(), 'map')
-      ->fields('map', $this->destinationIdFields());
-
+    // Canonicalize the keys into a hash of DB-field => value.
     $is_associative = !isset($source_id_values[0]);
-    $orig_source_ids = $source_id_values;
+    $conditions = [];
     foreach ($this->sourceIdFields() as $field_name => $db_field) {
       if ($is_associative) {
         // Associative $source_id_values can have fields out of order.
         if (isset($source_id_values[$field_name])) {
-          $query->condition($db_field, $source_id_values[$field_name]);
+          $conditions[$db_field] = $source_id_values[$field_name];
           unset($source_id_values[$field_name]);
         }
       }
@@ -548,12 +546,24 @@ class Sql extends PluginBase implements MigrateIdMapInterface, ContainerFactoryP
         if (empty($source_id_values)) {
           break;
         }
-        $query->condition($db_field, array_shift($source_id_values));
+        $conditions[$db_field] = array_shift($source_id_values);
       }
     }
 
     if (!empty($source_id_values)) {
-      throw new MigrateException("Extra unknown items in source IDs " . print_r($orig_source_ids, TRUE));
+      throw new MigrateException("Extra unknown items in source IDs");
+    }
+
+    $query = $this->getDatabase()->select($this->mapTableName(), 'map')
+      ->fields('map', $this->destinationIdFields());
+    if (count($this->sourceIdFields()) === count($conditions)) {
+      // Optimization: Use the primary key.
+      $query->condition(self::SOURCE_IDS_HASH, $this->getSourceIDsHash(array_values($conditions)));
+    }
+    else {
+      foreach ($conditions as $db_field => $value) {
+        $query->condition($db_field, $value);
+      }
     }
 
     return $query->execute()->fetchAll(\PDO::FETCH_NUM);

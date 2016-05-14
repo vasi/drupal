@@ -210,20 +210,28 @@ interface MigrateIdMapInterface extends \Iterator, PluginInspectionInterface {
    *
    * @return array
    *   The destination identifier values of the record, or empty on failure.
+   *
+   * @deprecated in Drupal 8.1.x, will be removed before Drupal 9.0.x. Use
+   *   lookupDestinationIds() instead.
    */
   public function lookupDestinationId(array $source_id_values);
 
   /**
-   * Looks up the destination identifies corresponding to a source key.
+   * Looks up the destination identifiers corresponding to a source key.
    *
    * This can look up a subset of source keys if only some are provided, and
    * will return all destination keys that match.
    *
    * @param array $source_id_values
    *   The source identifier keyed values of the records, e.g. ['nid' => 5].
+   *   If unkeyed, the first count($source_id_values) keys will be assumed.
    *
    * @return array
    *    An array of arrays of destination identifier values.
+   *
+   * @throws \Drupal\migrate\MigrateException
+   *   Thrown when $source_id_values contains unknown keys, or is the wrong
+   *   length.
    */
   public function lookupDestinationIds(array $source_id_values);
 
