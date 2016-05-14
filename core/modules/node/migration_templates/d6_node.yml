@@ -38,6 +38,7 @@ process:
 
 destination:
   plugin: entity:node
+  source_language_keys: language
 migration_dependencies:
   required:
     - d6_user

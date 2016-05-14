@@ -15,6 +15,11 @@ use Drupal\migrate_drupal\Plugin\migrate\source\DrupalSqlBase;
 class Node extends DrupalSqlBase {
 
   /**
+   * An expression for the translation set of a node.
+   */
+  const NODE_TRANSLATION_SET = 'CASE n.tnid WHEN 0 THEN n.nid ELSE n.tnid END';
+
+  /**
    * The join options between the node and the node_revisions table.
    */
   const JOIN = 'n.vid = nr.vid';
@@ -37,9 +42,9 @@ class Node extends DrupalSqlBase {
    * {@inheritdoc}
    */
   public function query() {
-    // Select node in its last revision.
-    $query = $this->select('node_revisions', 'nr')
-      ->fields('n', array(
+    $query = $this->translationQuery();
+
+    $query->fields('n', array(
         'nid',
         'type',
         'language',
@@ -54,7 +59,6 @@ class Node extends DrupalSqlBase {
         'translate',
       ))
       ->fields('nr', array(
-        'vid',
         'title',
         'body',
         'teaser',
@@ -64,7 +68,7 @@ class Node extends DrupalSqlBase {
       ));
     $query->addField('n', 'uid', 'node_uid');
     $query->addField('nr', 'uid', 'revision_uid');
-    $query->innerJoin('node', 'n', static::JOIN);
+    $query->addField('nr', 'vid', 'field_revision_id');
 
     if (isset($this->configuration['node_type'])) {
       $query->condition('n.type', $this->configuration['node_type']);
@@ -122,6 +126,12 @@ class Node extends DrupalSqlBase {
         $row->setSourceProperty($field, $values);
       }
     }
+
+    // Use the same nid for translation sets.
+    if ($tnid = $row->getSourceProperty('tnid')) {
+      $row->setSourceProperty('nid', $tnid);
+    }
+    // TODO: What do we claim the current vid is?
 
     return parent::prepareRow($row);
   }
@@ -233,7 +243,7 @@ class Node extends DrupalSqlBase {
         // the time being.
         ->isNotNull($field['field_name'] . '_' . $columns[0])
         ->condition('nid', $node->getSourceProperty('nid'))
-        ->condition('vid', $node->getSourceProperty('vid'))
+        ->condition('vid', $node->getSourceProperty('field_revision_id'))
         ->execute()
         ->fetchAllAssoc('delta');
     }
@@ -248,7 +258,42 @@ class Node extends DrupalSqlBase {
   public function getIds() {
     $ids['nid']['type'] = 'integer';
     $ids['nid']['alias'] = 'n';
+    $ids['language']['type'] = 'string';
+    $ids['language']['alias'] = 'n';
     return $ids;
   }
 
+  /**
+   * Build a query to get the maximum vid of each translation set.
+   *
+   * @return \Drupal\Core\Database\Query\SelectInterface
+   *   The generated query.
+   */
+  protected function maxVidQuery() {
+    $subquery = $this->select('node', 'n');
+    $subquery->addExpression(self::NODE_TRANSLATION_SET, 'translation_set');
+    $subquery->groupBy('translation_set');
+    $subquery->addExpression('MAX(vid)', 'vid');
+    return $subquery;
+  }
+
+  /**
+   * Build a query that yields the rows we want to migrate.
+   *
+   * It should have a node table 'n', and a node_revision table 'nr'.
+   *
+   * @return \Drupal\Core\Database\Query\SelectInterface
+   *   The generated query.
+   */
+  protected function translationQuery() {
+    $query = $this->select('node_revisions', 'nr');
+    $query->innerJoin('node', 'n', static::JOIN);
+
+    // Claim our vid is the maximum vid of our translation set.
+    $query->join($this->maxVidQuery(), 'max_vid',
+      'max_vid.translation_set IN (n.nid, n.tnid)');
+    $query->fields('max_vid', ['vid']);
+
+    return $query;
+  }
 }
