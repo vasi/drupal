@@ -209,9 +209,23 @@ interface MigrateIdMapInterface extends \Iterator, PluginInspectionInterface {
    *   The source identifier keyed values of the record, e.g. ['nid' => 5].
    *
    * @return array
-   *   The destination identifier values of the record, or NULL on failure.
+   *   The destination identifier values of the record, or empty on failure.
    */
   public function lookupDestinationId(array $source_id_values);
+
+  /**
+   * Looks up the destination identifies corresponding to a source key.
+   *
+   * This can look up a subset of source keys if only some are provided, and
+   * will return all destination keys that match.
+   *
+   * @param array $source_id_values
+   *   The source identifier keyed values of the records, e.g. ['nid' => 5].
+   *
+   * @return array
+   *    An array of arrays of destination identifier values.
+   */
+  public function lookupDestinationIds(array $source_id_values);
 
   /**
    * Looks up the destination identifier currently being iterated.

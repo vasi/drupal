@@ -517,16 +517,46 @@ class Sql extends PluginBase implements MigrateIdMapInterface, ContainerFactoryP
    * {@inheritdoc}
    */
   public function lookupDestinationId(array $source_id_values) {
+    $results = $this->lookupDestinationIds($source_id_values);
+    return $results ? reset($results) : array();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function lookupDestinationIds(array $source_id_values) {
     if (empty($source_id_values)) {
       return array();
     }
-    $query = $this->getDatabase()->select($this->mapTableName(), 'map')
-              ->fields('map', $this->destinationIdFields());
 
-    $query->condition(static::SOURCE_IDS_HASH, $this->getSourceIDsHash($source_id_values));
-    $result = $query->execute();
-    $destination_id = $result->fetchAssoc();
-    return array_values($destination_id ?: array());
+    $query = $this->getDatabase()->select($this->mapTableName(), 'map')
+      ->fields('map', $this->destinationIdFields());
+
+    $is_associative = !isset($source_id_values[0]);
+    $orig_source_ids = $source_id_values;
+    foreach ($this->sourceIdFields() as $field_name => $db_field) {
+      if ($is_associative) {
+        // Associative $source_id_values can have fields out of order.
+        if (isset($source_id_values[$field_name])) {
+          $query->condition($db_field, $source_id_values[$field_name]);
+          unset($source_id_values[$field_name]);
+        }
+      }
+      else {
+        // For non-associative $source_id_values, we assume they're the first
+        // few fields.
+        if (empty($source_id_values)) {
+          break;
+        }
+        $query->condition($db_field, array_shift($source_id_values));
+      }
+    }
+
+    if (!empty($source_id_values)) {
+      throw new MigrateException("Extra unknown items in source IDs " . print_r($orig_source_ids, TRUE));
+    }
+
+    return $query->execute()->fetchAll(\PDO::FETCH_NUM);
   }
 
   /**
