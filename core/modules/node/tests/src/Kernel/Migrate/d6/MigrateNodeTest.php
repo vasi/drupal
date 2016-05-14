@@ -20,11 +20,16 @@ class MigrateNodeTest extends MigrateNodeTestBase {
   /**
    * {@inheritdoc}
    */
+  public static $modules = ['language'];
+
+  /**
+   * {@inheritdoc}
+   */
   protected function setUp() {
     parent::setUp();
     $this->setUpMigratedFiles();
     $this->installSchema('file', ['file_usage']);
-    $this->executeMigrations(['d6_node']);
+    $this->executeMigrations(['language', 'd6_node']);
   }
 
   /**
@@ -119,7 +124,9 @@ class MigrateNodeTest extends MigrateNodeTestBase {
     // Now insert a row indicating a failure and set to update later.
     $title = $this->rerunMigration(array(
       'sourceid1' => 2,
+      'sourceid2' => 'en',
       'destid1' => NULL,
+      'destid2' => NULL,
       'source_row_status' => MigrateIdMapInterface::STATUS_NEEDS_UPDATE,
     ));
     $node = Node::load(2);
@@ -150,7 +157,10 @@ class MigrateNodeTest extends MigrateNodeTestBase {
     $default_connection = \Drupal::database();
     $default_connection->truncate($table_name)->execute();
     if ($new_row) {
-      $hash = $migration->getIdMap()->getSourceIDsHash(['nid' => $new_row['sourceid1']]);
+      $hash = $migration->getIdMap()->getSourceIDsHash([
+        'nid' => $new_row['sourceid1'],
+        'language' => $new_row['sourceid2']
+      ]);
       $new_row['source_ids_hash'] = $hash;
       $default_connection->insert($table_name)
         ->fields($new_row)
