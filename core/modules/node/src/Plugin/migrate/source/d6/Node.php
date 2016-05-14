@@ -131,7 +131,6 @@ class Node extends DrupalSqlBase {
     if ($tnid = $row->getSourceProperty('tnid')) {
       $row->setSourceProperty('nid', $tnid);
     }
-    // TODO: What do we claim the current vid is?
 
     return parent::prepareRow($row);
   }
