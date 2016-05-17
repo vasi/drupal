@@ -15,7 +15,7 @@ class MigrateNodeRevisionTest extends MigrateNodeTestBase {
    */
   protected function setUp() {
     parent::setUp();
-    $this->executeMigrations(['d6_node', 'd6_node_revision']);
+    $this->executeMigrations(['language', 'd6_node', 'd6_node_revision']);
   }
 
   /**
