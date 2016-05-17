@@ -39,6 +39,8 @@ class MigrateUpgrade7Test extends MigrateUpgradeTestBase {
       'block_content_type' => 1,
       'comment' => 1,
       'comment_type' => 7,
+      // Module 'language' comes with 'en', 'und', 'zxx'. Migration adds 'is'.
+      'configurable_language' => 4,
       'contact_form' => 3,
       'editor' => 2,
       'field_config' => 41,
@@ -57,7 +59,7 @@ class MigrateUpgrade7Test extends MigrateUpgradeTestBase {
       'menu' => 10,
       'taxonomy_term' => 18,
       'taxonomy_vocabulary' => 3,
-      'tour' => 1,
+      'tour' => 4,
       'user' => 3,
       'user_role' => 4,
       'menu_link_content' => 9,

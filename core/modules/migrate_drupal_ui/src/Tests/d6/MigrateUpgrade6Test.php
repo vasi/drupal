@@ -15,13 +15,6 @@ use Drupal\user\Entity\User;
 class MigrateUpgrade6Test extends MigrateUpgradeTestBase {
 
   /**
-   * Modules to enable.
-   *
-   * @var array
-   */
-  public static $modules = ['language'];
-
-  /**
    * {@inheritdoc}
    */
   protected function setUp() {
