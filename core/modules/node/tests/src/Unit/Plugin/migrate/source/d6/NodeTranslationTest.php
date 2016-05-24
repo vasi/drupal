@@ -19,7 +19,7 @@ class NodeTranslationTest extends NodeTestBase {
 
   protected $expectedResults = array(
     array(
-      'nid' => 6,
+      'nid' => 7,
       'vid' => 7,
       'type' => 'story',
       'language' => 'fr',
