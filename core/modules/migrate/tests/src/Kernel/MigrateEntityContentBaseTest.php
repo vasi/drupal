@@ -14,7 +14,7 @@ use Drupal\migrate\Row;
  *
  * @group migrate
  */
-class EntityContentBaseTest extends KernelTestBase {
+class MigrateEntityContentBaseTest extends KernelTestBase {
 
   /**
    * Modules to enable.
