@@ -65,13 +65,10 @@ class Node extends DrupalSqlBase {
         'log',
         'timestamp',
         'format',
+        'vid',
       ));
     $query->addField('n', 'uid', 'node_uid');
     $query->addField('nr', 'uid', 'revision_uid');
-
-    // Whatever we claim this revision is, use the actual field from
-    // node_revisions to get field values.
-    $query->addField('nr', 'vid', 'vid_for_fields');
 
     if (isset($this->configuration['node_type'])) {
       $query->condition('n.type', $this->configuration['node_type']);
@@ -130,9 +127,9 @@ class Node extends DrupalSqlBase {
       }
     }
 
-    // Use the same nid for translation sets.
-    if ($tnid = $row->getSourceProperty('tnid')) {
-      $row->setSourceProperty('nid', $tnid);
+    // Make sure we always have a translation set.
+    if ($row->getSourceProperty('tnid') == 0) {
+      $row->setSourceProperty('tnid', $row->getSourceProperty('nid'));
     }
 
     return parent::prepareRow($row);
@@ -245,7 +242,7 @@ class Node extends DrupalSqlBase {
         // the time being.
         ->isNotNull($field['field_name'] . '_' . $columns[0])
         ->condition('nid', $node->getSourceProperty('nid'))
-        ->condition('vid', $node->getSourceProperty('vid_for_fields'))
+        ->condition('vid', $node->getSourceProperty('vid'))
         ->execute()
         ->fetchAllAssoc('delta');
     }
@@ -264,7 +261,7 @@ class Node extends DrupalSqlBase {
   }
 
   /**
-   * Build a query to get the maximum vid of each translation set.
+   * Wuery to get the max vid of the translation set in the node table.
    *
    * @return \Drupal\Core\Database\Query\SelectInterface
    *   The generated query.
@@ -290,8 +287,7 @@ class Node extends DrupalSqlBase {
     $query->innerJoin('node', 'n', static::JOIN);
 
     // Claim our vid is the maximum vid of our translation set.
-    // Otherwise we generate translations of the same node with different
-    // revisions, which confuses Drupal.
+    // Otherwise the revision the node is assigned in D8 may be confusing.
     $query->join($this->maxVidQuery(), 'max_vid',
       'max_vid.translation_set IN (n.nid, n.tnid)');
     $query->fields('max_vid', ['vid']);

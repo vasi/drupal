@@ -150,6 +150,9 @@ class EntityContentBase extends Entity {
    *   The row object to update from.
    */
   protected function updateEntity(EntityInterface $entity, Row $row) {
+    // By default, an update will be preserved.
+    $rollback_action = MigrateIdMapInterface::ROLLBACK_PRESERVE;
+
     // Make sure we have the right translation.
     if ($entity instanceof TranslatableInterface) {
       $property = $this->storage->getEntityType()->getKey('langcode');
@@ -157,6 +160,9 @@ class EntityContentBase extends Entity {
         $language = $row->getDestinationProperty($property);
         if (!$entity->hasTranslation($language)) {
           $entity->addTranslation($language);
+
+          // We're adding a translation, so delete it on rollback.
+          $rollback_action = MigrateIdMapInterface::ROLLBACK_DELETE;
         }
         $entity = $entity->getTranslation($language);
       }
@@ -180,7 +186,7 @@ class EntityContentBase extends Entity {
       }
     }
 
-    $this->setRollbackAction($row->getIdMap());
+    $this->setRollbackAction($row->getIdMap(), $rollback_action);
 
     // We might have a different (translated) entity, so return it.
     return $entity;
@@ -224,6 +230,34 @@ class EntityContentBase extends Entity {
         }
 
         $row->setDestinationProperty($field_name, $values);
+      }
+    }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function rollback(array $destination_identifier) {
+    if (empty($this->configuration['translations'])) {
+      parent::rollback($destination_identifier);
+    }
+    else {
+      // Attempt to remove the translation.
+      $entity = $this->storage->load(reset($destination_identifier));
+      if ($entity && $entity instanceof TranslatableInterface) {
+        if ($key = $this->getKey('langcode')) {
+          if (isset($destination_identifier[$key])) {
+            $langcode = $destination_identifier[$key];
+            if ($entity->hasTranslation($langcode)) {
+              // Make sure we don't remove the default translation.
+              $translation = $entity->getTranslation($langcode);
+              if (!$translation->isDefaultTranslation()) {
+                $entity->removeTranslation($langcode);
+                $entity->save();
+              }
+            }
+          }
+        }
       }
     }
   }

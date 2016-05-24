@@ -6,7 +6,7 @@ deriver: Drupal\node\Plugin\migrate\D6NodeDeriver
 source:
   plugin: d6_node
 process:
-  nid: nid
+  nid: tnid
   vid: vid
   type: type
   langcode:
