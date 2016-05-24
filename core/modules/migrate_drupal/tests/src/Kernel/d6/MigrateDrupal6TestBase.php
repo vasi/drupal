@@ -98,7 +98,7 @@ abstract class MigrateDrupal6TestBase extends MigrateDrupalTestBase {
     $this->migrateFields();
 
     $this->installEntitySchema('node');
-    $this->executeMigrations(['d6_node_settings', 'd6_node']);
+    $this->executeMigrations(['d6_node_settings', 'd6_node', 'd6_node_translation']);
 
     if ($include_revisions) {
       $this->executeMigrations(['d6_node_revision']);

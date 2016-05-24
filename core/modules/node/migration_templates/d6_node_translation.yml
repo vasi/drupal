@@ -1,13 +1,19 @@
-id: d6_node
-label: Nodes
+id: d6_node_translation
+label: Nodes translations
 migration_tags:
   - Drupal 6
 deriver: Drupal\node\Plugin\migrate\D6NodeDeriver
 source:
   plugin: d6_node
 process:
-  nid: nid
-  vid: vid
+  nid:
+    -
+      plugin: migration
+      migration: d6_node
+      source: nid
+    -
+      plugin: skip_on_empty
+      method: row
   type: type
   langcode:
     plugin: default_value
@@ -38,6 +44,7 @@ process:
 
 destination:
   plugin: entity:node
+  translations: true
 migration_dependencies:
   required:
     - d6_user

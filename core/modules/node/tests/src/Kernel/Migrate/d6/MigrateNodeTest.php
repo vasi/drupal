@@ -24,7 +24,7 @@ class MigrateNodeTest extends MigrateNodeTestBase {
     parent::setUp();
     $this->setUpMigratedFiles();
     $this->installSchema('file', ['file_usage']);
-    $this->executeMigrations(['language', 'd6_node']);
+    $this->executeMigrations(['language', 'd6_node', 'd6_node_translation']);
   }
 
   /**
@@ -85,6 +85,7 @@ class MigrateNodeTest extends MigrateNodeTestBase {
     $this->assertTrue($node instanceof NodeInterface);
     $this->assertIdentical('en', $node->langcode->value);
     $this->assertIdentical('The Real McCoy', $node->title->value);
+    $this->assertTrue($node->hasTranslation('fr'));
 
     // Node 10 is a translation of node 9, and should not be imported separately.
     $this->assertNull(Node::load(10));
@@ -119,9 +120,7 @@ class MigrateNodeTest extends MigrateNodeTestBase {
     // Now insert a row indicating a failure and set to update later.
     $title = $this->rerunMigration(array(
       'sourceid1' => 2,
-      'sourceid2' => 'en',
       'destid1' => NULL,
-      'destid2' => NULL,
       'source_row_status' => MigrateIdMapInterface::STATUS_NEEDS_UPDATE,
     ));
     $node = Node::load(2);
@@ -152,10 +151,7 @@ class MigrateNodeTest extends MigrateNodeTestBase {
     $default_connection = \Drupal::database();
     $default_connection->truncate($table_name)->execute();
     if ($new_row) {
-      $hash = $migration->getIdMap()->getSourceIDsHash([
-        'nid' => $new_row['sourceid1'],
-        'language' => $new_row['sourceid2']
-      ]);
+      $hash = $migration->getIdMap()->getSourceIDsHash(['nid' => $new_row['sourceid1']]);
       $new_row['source_ids_hash'] = $hash;
       $default_connection->insert($table_name)
         ->fields($new_row)

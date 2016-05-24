@@ -10,15 +10,10 @@ process:
     -
       plugin: migration
       migration: d6_node
-      source:
-        - nid
+      source: nid
     -
       plugin: skip_on_empty
       method: row
-    -
-      plugin: extract
-      index:
-        - 0
   type: type
   # The actual field name is dynamic and will be added by the builder.
 destination:
