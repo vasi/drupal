@@ -88,38 +88,10 @@ class EntityContentBase extends Entity {
     }
 
     $ids = $this->save($entity, $old_destination_id_values);
-    if (!empty($this->configuration['source_language_keys'])) {
+    if (!empty($this->configuration['translations'])) {
       $ids[] = $entity->language()->getId();
     }
     return $ids;
-  }
-
-  /**
-   * Get the destination ID values of a translation of this entity.
-   *
-   * @param \Drupal\migrate\Row $row
-   *   The row object.
-   * @param array &$destination_ids
-   *   The old destination IDs, to be modified by this method.
-   */
-  protected function getTranslatedDestinationIds(Row $row, array &$destination_ids) {
-    if (empty($destination_ids) && isset($this->configuration['source_language_keys'])) {
-      // Get source IDs, without language keys.
-      $source_language_keys = (array) $this->configuration['source_language_keys'];
-      $source_ids = array_diff_key($row->getSourceIdValues(), array_flip($source_language_keys));
-
-      // Try to lookup another translation of the same entity.
-      $dest_ids = $this->migration->getIdMap()->lookupDestinationIds($source_ids);
-      $destination_ids = reset($dest_ids) ?: [];
-    }
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  protected function getEntity(Row $row, array $old_destination_id_values) {
-    $this->getTranslatedDestinationIds($row, $old_destination_id_values);
-    return parent::getEntity($row, $old_destination_id_values);
   }
 
   /**
@@ -157,7 +129,7 @@ class EntityContentBase extends Entity {
   public function getIds() {
     $ids = $this->baseIds();
 
-    if (!empty($this->configuration['source_language_keys'])) {
+    if (!empty($this->configuration['translations'])) {
       if ($key = $this->getKey('langcode')) {
         $ids[$key]['type'] = 'string';
       }

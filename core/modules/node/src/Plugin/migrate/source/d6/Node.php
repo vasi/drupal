@@ -260,8 +260,6 @@ class Node extends DrupalSqlBase {
   public function getIds() {
     $ids['nid']['type'] = 'integer';
     $ids['nid']['alias'] = 'n';
-    $ids['language']['type'] = 'string';
-    $ids['language']['alias'] = 'n';
     return $ids;
   }
 
@@ -297,6 +295,14 @@ class Node extends DrupalSqlBase {
     $query->join($this->maxVidQuery(), 'max_vid',
       'max_vid.translation_set IN (n.nid, n.tnid)');
     $query->fields('max_vid', ['vid']);
+
+    // Are we yielding original nodes, or translations?
+    if (empty($this->configuration['translations'])) {
+      $query->where('n.tnid = 0 OR n.tnid = n.nid');
+    }
+    else {
+      $query->where('n.tnid <> 0 AND n.tnid <> n.nid');
+    }
 
     return $query;
   }
