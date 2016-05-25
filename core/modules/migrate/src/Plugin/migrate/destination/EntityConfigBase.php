@@ -75,6 +75,7 @@ class EntityConfigBase extends Entity {
     }
 
     $this->setRollbackAction($row->getIdMap());
+    return $entity;
   }
 
   /**

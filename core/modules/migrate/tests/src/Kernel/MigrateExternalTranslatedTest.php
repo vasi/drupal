@@ -19,7 +19,8 @@ class MigrateExternalTranslatedTest extends MigrateTestBase {
   /**
    * {@inheritdoc}
    *
-   * We only need migrate_drupal because of https://www.drupal.org/node/2560795 .
+   * @todo: Remove migrate_drupal when https://www.drupal.org/node/2560795 is
+   * fixed.
    */
   public static $modules = ['system', 'user', 'language', 'node', 'field', 'migrate_drupal', 'migrate_external_translated_test'];
 
@@ -63,21 +64,18 @@ class MigrateExternalTranslatedTest extends MigrateTestBase {
     $this->assertEquals('Cat', $node->title->value);
     $this->assertEquals('Chat', $node->getTranslation('fr')->title->value);
     $this->assertEquals('Gato', $node->getTranslation('es')->title->value);
-    $this->assertFalse($node->hasTranslation('de'));
 
     $node = $storage->load(2);
     $this->assertEquals('en', $node->language()->getId());
     $this->assertEquals('Dog', $node->title->value);
     $this->assertEquals('Chien', $node->getTranslation('fr')->title->value);
     $this->assertFalse($node->hasTranslation('es'));
-    $this->assertFalse($node->hasTranslation('de'));
 
     $node = $storage->load(3);
     $this->assertEquals('en', $node->language()->getId());
     $this->assertEquals('Monkey', $node->title->value);
     $this->assertFalse($node->hasTranslation('fr'));
     $this->assertFalse($node->hasTranslation('es'));
-    $this->assertFalse($node->hasTranslation('de'));
 
     $this->assertNull($storage->load(4));
 
