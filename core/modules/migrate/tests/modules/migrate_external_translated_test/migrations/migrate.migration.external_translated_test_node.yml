@@ -9,7 +9,6 @@ process:
   type: constants/type
   title: title
   langcode:
-  langcode:
     plugin: static_map
     source: lang
     map:
