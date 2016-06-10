@@ -261,7 +261,7 @@ class Node extends DrupalSqlBase {
   }
 
   /**
-   * Wuery to get the max vid of the translation set in the node table.
+   * Query to get the max vid of the translation set in the node table.
    *
    * @return \Drupal\Core\Database\Query\SelectInterface
    *   The generated query.
