@@ -111,18 +111,6 @@ class EntityContentBase extends Entity {
   }
 
   /**
-   * Get the base IDs of this entity, not including dynamically determined IDs.
-   *
-   * @return array
-   *   An array of IDs.
-   */
-  protected function baseIds() {
-    $id_key = $this->getKey('id');
-    $ids[$id_key]['type'] = 'integer';
-    return $ids;
-  }
-
-  /**
    * Get whether this destination is for translations.
    *
    * @return bool
@@ -136,7 +124,8 @@ class EntityContentBase extends Entity {
    * {@inheritdoc}
    */
   public function getIds() {
-    $ids = $this->baseIds();
+    $id_key = $this->getKey('id');
+    $ids[$id_key]['type'] = 'integer';
 
     if ($this->isTranslationDestination()) {
       if ($key = $this->getKey('langcode')) {

@@ -2,6 +2,7 @@
 
 namespace Drupal\node\Plugin\migrate\source\d6;
 
+use Drupal\Core\Database\Query\SelectInterface;
 use Drupal\migrate\Row;
 use Drupal\migrate_drupal\Plugin\migrate\source\DrupalSqlBase;
 
@@ -42,10 +43,13 @@ class Node extends DrupalSqlBase {
    * {@inheritdoc}
    */
   public function query() {
-    $query = $this->translationQuery();
+    $query = $this->select('node_revisions', 'nr');
+    $query->innerJoin('node', 'n', static::JOIN);
+    $this->handleTranslations($query);
 
     $query->fields('n', array(
         'nid',
+        'vid',
         'type',
         'language',
         'status',
@@ -261,37 +265,12 @@ class Node extends DrupalSqlBase {
   }
 
   /**
-   * Query to get the max vid of the translation set in the node table.
+   * Adapt our query for translations.
    *
-   * @return \Drupal\Core\Database\Query\SelectInterface
+   * @param \Drupal\Core\Database\Query\SelectInterface
    *   The generated query.
    */
-  protected function maxVidQuery() {
-    $subquery = $this->select('node', 'n');
-    $subquery->addExpression(self::NODE_TRANSLATION_SET, 'translation_set');
-    $subquery->groupBy('translation_set');
-    $subquery->addExpression('MAX(vid)', 'vid');
-    return $subquery;
-  }
-
-  /**
-   * Build a query that yields the rows we want to migrate.
-   *
-   * It should have a node table 'n', and a node_revision table 'nr'.
-   *
-   * @return \Drupal\Core\Database\Query\SelectInterface
-   *   The generated query.
-   */
-  protected function translationQuery() {
-    $query = $this->select('node_revisions', 'nr');
-    $query->innerJoin('node', 'n', static::JOIN);
-
-    // Claim our vid is the maximum vid of our translation set.
-    // Otherwise the revision the node is assigned in D8 may be confusing.
-    $query->join($this->maxVidQuery(), 'max_vid',
-      'max_vid.translation_set IN (n.nid, n.tnid)');
-    $query->fields('max_vid', ['vid']);
-
+  protected function handleTranslations(SelectInterface $query) {
     // Are we yielding original nodes, or translations?
     if (empty($this->configuration['translations'])) {
       $query->where('n.tnid = 0 OR n.tnid = n.nid');
@@ -299,7 +278,5 @@ class Node extends DrupalSqlBase {
     else {
       $query->where('n.tnid <> 0 AND n.tnid <> n.nid');
     }
-
-    return $query;
   }
 }
