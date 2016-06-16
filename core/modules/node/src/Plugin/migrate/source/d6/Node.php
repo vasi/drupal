@@ -44,7 +44,6 @@ class Node extends DrupalSqlBase {
 
     $query->fields('n', array(
         'nid',
-        'vid',
         'type',
         'language',
         'status',

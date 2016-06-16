@@ -96,7 +96,7 @@ class NodeTest extends NodeTestBase {
     ),
     array(
       'nid' => 6,
-      'vid' => 7,
+      'vid' => 6,
       'type' => 'story',
       'language' => 'en',
       'title' => 'node title 6',
