@@ -15,6 +15,7 @@ process:
   login: login
   status: status
   timezone: timezone
+  langcode: language
   preferred_langcode: language
   preferred_admin_langcode: language
   init: init

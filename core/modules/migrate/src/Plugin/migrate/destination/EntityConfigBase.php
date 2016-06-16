@@ -68,9 +68,6 @@ class EntityConfigBase extends Entity {
    *   The entity to update.
    * @param \Drupal\migrate\Row $row
    *   The row object to update from.
-   *
-   * @return NULL|\Drupal\Core\Entity\EntityInterface
-   *   An updated entity, or NULL if it's the same as the one passed in.
    */
   protected function updateEntity(EntityInterface $entity, Row $row) {
     foreach ($row->getRawDestination() as $property => $value) {
@@ -78,7 +75,6 @@ class EntityConfigBase extends Entity {
     }
 
     $this->setRollbackAction($row->getIdMap());
-    return $entity;
   }
 
   /**

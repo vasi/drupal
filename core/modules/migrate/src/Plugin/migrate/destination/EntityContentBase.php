@@ -122,6 +122,15 @@ class EntityContentBase extends Entity {
     return $ids;
   }
 
+  /**
+   * Get whether this destination is for translations.
+   *
+   * @return bool
+   *   Whether this destination is for translations.
+   */
+  protected function isTranslationDestination() {
+    return !empty($this->configuration['translations']);
+  }
 
   /**
    * {@inheritdoc}
@@ -129,7 +138,7 @@ class EntityContentBase extends Entity {
   public function getIds() {
     $ids = $this->baseIds();
 
-    if (!empty($this->configuration['translations'])) {
+    if ($this->isTranslationDestination()) {
       if ($key = $this->getKey('langcode')) {
         $ids[$key]['type'] = 'string';
       }
@@ -148,13 +157,16 @@ class EntityContentBase extends Entity {
    *   The entity to update.
    * @param \Drupal\migrate\Row $row
    *   The row object to update from.
+   *
+   * @return NULL|\Drupal\Core\Entity\EntityInterface
+   *   An updated entity, or NULL if it's the same as the one passed in.
    */
   protected function updateEntity(EntityInterface $entity, Row $row) {
     // By default, an update will be preserved.
     $rollback_action = MigrateIdMapInterface::ROLLBACK_PRESERVE;
 
     // Make sure we have the right translation.
-    if ($entity instanceof TranslatableInterface) {
+    if ($this->isTranslationDestination()) {
       $property = $this->storage->getEntityType()->getKey('langcode');
       if ($row->hasDestinationProperty($property)) {
         $language = $row->getDestinationProperty($property);
@@ -238,10 +250,7 @@ class EntityContentBase extends Entity {
    * {@inheritdoc}
    */
   public function rollback(array $destination_identifier) {
-    if (empty($this->configuration['translations'])) {
-      parent::rollback($destination_identifier);
-    }
-    else {
+    if ($this->isTranslationDestination()) {
       // Attempt to remove the translation.
       $entity = $this->storage->load(reset($destination_identifier));
       if ($entity && $entity instanceof TranslatableInterface) {
@@ -259,6 +268,9 @@ class EntityContentBase extends Entity {
           }
         }
       }
+    }
+    else {
+      parent::rollback($destination_identifier);
     }
   }
 

@@ -54,8 +54,6 @@ class MigrateUserTest extends MigrateDrupal7TestBase {
    *   Whether or not the account is blocked.
    * @param string $langcode
    *   The user account's language code.
-   * @param string $preferred_langcode
-   *   The user's preferred language.
    * @param string $init
    *   The user's initial email address.
    * @param string[] $roles
@@ -63,7 +61,7 @@ class MigrateUserTest extends MigrateDrupal7TestBase {
    * @param bool $has_picture
    *   Whether the user is expected to have a picture attached.
    */
-  protected function assertEntity($id, $label, $mail, $password, $access, $login, $blocked, $langcode, $preferred_langcode, $init, array $roles = [RoleInterface::AUTHENTICATED_ID], $has_picture = FALSE) {
+  protected function assertEntity($id, $label, $mail, $password, $access, $login, $blocked, $langcode, $init, array $roles = [RoleInterface::AUTHENTICATED_ID], $has_picture = FALSE) {
     /** @var \Drupal\user\UserInterface $user */
     $user = User::load($id);
     $this->assertTrue($user instanceof UserInterface);
@@ -76,8 +74,8 @@ class MigrateUserTest extends MigrateDrupal7TestBase {
     // user preferred language is not configured on the site. We just want to
     // test if the value was imported correctly.
     $this->assertIdentical($langcode, $user->langcode->value);
-    $this->assertIdentical($preferred_langcode, $user->preferred_langcode->value);
-    $this->assertIdentical($preferred_langcode, $user->preferred_admin_langcode->value);
+    $this->assertIdentical($langcode, $user->preferred_langcode->value);
+    $this->assertIdentical($langcode, $user->preferred_admin_langcode->value);
     $this->assertIdentical($init, $user->getInitialEmail());
     $this->assertIdentical($roles, $user->getRoles());
     $this->assertIdentical($has_picture, !$user->user_picture->isEmpty());
@@ -89,8 +87,7 @@ class MigrateUserTest extends MigrateDrupal7TestBase {
    */
   public function testUser() {
     $password = '$S$DGFZUE.FhrXbe4y52eC7p0ZVRGD/gOPtVctDlmC89qkujnBokAlJ';
-    $this->assertEquals('en', \Drupal::languageManager()->getDefaultLanguage()->getId());
-    $this->assertEntity(2, 'Odo', 'odo@local.host', $password, '0', '0', FALSE, 'en', '', 'odo@local.host');
+    $this->assertEntity(2, 'Odo', 'odo@local.host', $password, '0', '0', FALSE, '', 'odo@local.host');
 
     // Ensure that the user can authenticate.
     $this->assertEquals(2, \Drupal::service('user.auth')->authenticate('Odo', 'a password'));
