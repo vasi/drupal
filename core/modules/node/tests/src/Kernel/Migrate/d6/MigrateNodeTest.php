@@ -82,13 +82,12 @@ class MigrateNodeTest extends MigrateNodeTestBase {
 
     // Test that translations are working.
     $node = Node::load(9);
-    $this->assertTrue($node instanceof NodeInterface);
     $this->assertIdentical('en', $node->langcode->value);
     $this->assertIdentical('The Real McCoy', $node->title->value);
-    $this->assertTrue($node->hasTranslation('fr'));
+    $this->assertTrue($node->hasTranslation('fr'), "Node 9 has french translation");
 
     // Node 10 is a translation of node 9, and should not be imported separately.
-    $this->assertNull(Node::load(10));
+    $this->assertNull(Node::load(10), "Node 10 doesn't exist in D8, it was a translation");
 
     // Rerun migration with invalid link attributes and a different URL and
     // title. If only the attributes are changed the error does not occur.

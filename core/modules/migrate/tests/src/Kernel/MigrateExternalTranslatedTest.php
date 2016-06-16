@@ -69,15 +69,15 @@ class MigrateExternalTranslatedTest extends MigrateTestBase {
     $this->assertEquals('en', $node->language()->getId());
     $this->assertEquals('Dog', $node->title->value);
     $this->assertEquals('Chien', $node->getTranslation('fr')->title->value);
-    $this->assertFalse($node->hasTranslation('es'));
+    $this->assertFalse($node->hasTranslation('es'), "No spanish translation for node 2");
 
     $node = $storage->load(3);
     $this->assertEquals('en', $node->language()->getId());
     $this->assertEquals('Monkey', $node->title->value);
-    $this->assertFalse($node->hasTranslation('fr'));
-    $this->assertFalse($node->hasTranslation('es'));
+    $this->assertFalse($node->hasTranslation('fr'), "No french translation for node 3");
+    $this->assertFalse($node->hasTranslation('es'), "No spanish translation for node 3");
 
-    $this->assertNull($storage->load(4));
+    $this->assertNull($storage->load(4), "No node 4 migrated");
 
     // Roll back the migrations.
     foreach ($migration_ids as $migration_id) {

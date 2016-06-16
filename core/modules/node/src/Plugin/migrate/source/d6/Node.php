@@ -16,11 +16,6 @@ use Drupal\migrate_drupal\Plugin\migrate\source\DrupalSqlBase;
 class Node extends DrupalSqlBase {
 
   /**
-   * An expression for the translation set of a node.
-   */
-  const NODE_TRANSLATION_SET = 'CASE n.tnid WHEN 0 THEN n.nid ELSE n.tnid END';
-
-  /**
    * The join options between the node and the node_revisions table.
    */
   const JOIN = 'n.vid = nr.vid';
@@ -271,12 +266,15 @@ class Node extends DrupalSqlBase {
    *   The generated query.
    */
   protected function handleTranslations(SelectInterface $query) {
-    // Are we yielding original nodes, or translations?
+    // Check whether or not we want translations.
     if (empty($this->configuration['translations'])) {
+      // No translations: Yield untranslated nodes, or default translations.
       $query->where('n.tnid = 0 OR n.tnid = n.nid');
     }
     else {
+      // Translations: Yield only non-default translations.
       $query->where('n.tnid <> 0 AND n.tnid <> n.nid');
     }
   }
+
 }
