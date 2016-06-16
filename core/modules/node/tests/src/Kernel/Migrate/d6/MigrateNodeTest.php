@@ -20,6 +20,11 @@ class MigrateNodeTest extends MigrateNodeTestBase {
   /**
    * {@inheritdoc}
    */
+  public static $modules = ['language', 'content_translation'];
+
+  /**
+   * {@inheritdoc}
+   */
   protected function setUp() {
     parent::setUp();
     $this->setUpMigratedFiles();

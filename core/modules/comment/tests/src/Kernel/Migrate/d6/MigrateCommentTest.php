@@ -17,7 +17,7 @@ class MigrateCommentTest extends MigrateDrupal6TestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['language', 'comment'];
+  public static $modules = ['comment'];
 
   /**
    * {@inheritdoc}
@@ -25,7 +25,6 @@ class MigrateCommentTest extends MigrateDrupal6TestBase {
   protected function setUp() {
     parent::setUp();
 
-    $this->installSchema('node', ['node_access']);
     $this->installEntitySchema('node');
     $this->installEntitySchema('comment');
     $this->installSchema('comment', ['comment_entity_statistics']);

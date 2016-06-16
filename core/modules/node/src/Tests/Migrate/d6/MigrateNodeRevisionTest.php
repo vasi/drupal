@@ -13,9 +13,14 @@ class MigrateNodeRevisionTest extends MigrateNodeTestBase {
   /**
    * {@inheritdoc}
    */
+  public static $modules = ['language', 'content_translation'];
+
+  /**
+   * {@inheritdoc}
+   */
   protected function setUp() {
     parent::setUp();
-    $this->executeMigrations(['language', 'd6_node', 'd6_node_revision']);
+    $this->executeMigrations(['d6_node', 'd6_node_revision']);
   }
 
   /**

@@ -4,6 +4,7 @@ namespace Drupal\Tests\migrate_drupal\Kernel\d6;
 
 use Drupal\field\Entity\FieldConfig;
 use Drupal\field\Entity\FieldStorageConfig;
+use Drupal\migrate\Plugin\migrate\destination\EntityContentBase;
 use Drupal\user\Entity\User;
 
 /**
@@ -85,4 +86,23 @@ class EntityContentBaseTest extends MigrateDrupal6TestBase {
     $this->assertIdentical('proto@zo.an', $account->getInitialEmail());
   }
 
+  /**
+   * Test that translation destination fails for untranslatable entities.
+   *
+   * @expectedException \Drupal\migrate\MigrateException
+   * @expectedExceptionMessage This entity type does not support translation.
+   */
+  public function testUntranslatable() {
+    $this->enableModules(['language_test']);
+    $migration = \Drupal::service('plugin.manager.migration')->createStubMigration([
+      'source' => [
+        'plugin' => 'embedded_data',
+        ''
+      ],
+      'destination' => [
+        'plugin' => 'entity:no_language_entity_test',
+        'translations' => TRUE,
+      ],
+    ]);
+  }
 }
