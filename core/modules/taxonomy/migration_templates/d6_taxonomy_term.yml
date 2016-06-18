@@ -13,11 +13,16 @@ process:
   name: name
   description: description
   weight: weight
+  parent_id:
+    - plugin: skip_on_empty
+      method: process
+      source: parent
+    - plugin: migration
+      migration: d6_taxonomy_term
   parent:
-    plugin: entity_parent
-    migration: d6_taxonomy_term
-    source: parent
-    none: 0
+    plugin: default_value
+    default_value: 0
+    source: '@parent_id'
   changed: timestamp
 destination:
   plugin: entity:taxonomy_term

@@ -155,7 +155,7 @@ class Migration extends ProcessPluginBase implements ContainerFactoryPluginInter
   }
 
   /**
-   * Skips the migration process entirely if the value is NULL.
+   * Skips the migration process entirely if the value is FALSE.
    *
    * @param mixed $value
    *   The incoming value to transform.
@@ -163,12 +163,9 @@ class Migration extends ProcessPluginBase implements ContainerFactoryPluginInter
    * @throws \Drupal\migrate\MigrateSkipProcessException
    */
   protected function skipOnEmpty($value) {
-    foreach ($value as $v) {
-      if (!is_null($v)) {
-        return;
-      }
+    if (!array_filter($value)) {
+      throw new MigrateSkipProcessException();
     }
-    throw new MigrateSkipProcessException();
   }
 
 }
