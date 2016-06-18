@@ -14,9 +14,10 @@ process:
   description: description
   weight: weight
   parent:
-    plugin: migration
+    plugin: entity_parent
     migration: d6_taxonomy_term
     source: parent
+    none: 0
   changed: timestamp
 destination:
   plugin: entity:taxonomy_term

@@ -9,9 +9,10 @@ source:
 process:
   cid: cid
   pid:
-    plugin: migration
+    plugin: entity_parent
     migration: d7_comment
     source: pid
+    none: NULL
   entity_id: nid
   entity_type: 'constants/entity_type'
   comment_type: comment_type

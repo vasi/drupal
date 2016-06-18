@@ -7,7 +7,7 @@ source:
 process:
   tid: tid
   vid:
-    plugin: migration
+    plugin: entity_parent
     migration: d7_taxonomy_vocabulary
     source: vid
   name: name
@@ -15,9 +15,10 @@ process:
   'description/format': format
   weight: weight
   parent:
-    plugin: migration
+    plugin: entity_parent
     migration: d7_taxonomy_term
     source: parent
+    none: 0
   changed: timestamp
 destination:
   plugin: entity:taxonomy_term
