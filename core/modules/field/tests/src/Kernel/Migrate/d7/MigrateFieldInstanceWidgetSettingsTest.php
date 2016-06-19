@@ -45,6 +45,7 @@ class MigrateFieldInstanceWidgetSettingsTest extends MigrateDrupal7TestBase {
     $this->executeMigrations([
       'd7_node_type',
       'd7_comment_type',
+      'd7_taxonomy_vocabulary',
       'd7_field',
       'd7_field_instance',
       'd7_field_instance_widget_settings',

@@ -2,8 +2,9 @@ id: d7_taxonomy_term
 label: Taxonomy terms
 migration_tags:
   - Drupal 7
+class: Drupal\taxonomy\Plugin\migrate\Term
 source:
-  plugin: taxonomy_term
+  plugin: d7_taxonomy_term
 process:
   tid: tid
   vid:

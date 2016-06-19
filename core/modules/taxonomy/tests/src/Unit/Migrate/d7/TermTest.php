@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\Tests\taxonomy\Unit\Migrate;
+namespace Drupal\Tests\taxonomy\Unit\Migrate\d7;
 
 /**
  * Tests taxonomy term source plugin.

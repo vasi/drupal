@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\taxonomy\Plugin\migrate\source;
+namespace Drupal\taxonomy\Plugin\migrate\source\d6;
 
 use Drupal\migrate\Row;
 use Drupal\migrate_drupal\Plugin\migrate\source\DrupalSqlBase;
@@ -11,7 +11,7 @@ use Drupal\migrate_drupal\Plugin\migrate\source\DrupalSqlBase;
  * @todo Support term_relation, term_synonym table if possible.
  *
  * @MigrateSource(
- *   id = "taxonomy_term",
+ *   id = "d6_taxonomy_term",
  *   source_provider = "taxonomy"
  * )
  */
@@ -35,22 +35,16 @@ class Term extends DrupalSqlBase {
    * {@inheritdoc}
    */
   public function query() {
-    if ($this->getModuleSchemaVersion('taxonomy') >= 7000) {
-      $this->termDataTable = 'taxonomy_term_data';
-      $this->termHierarchyTable = 'taxonomy_term_hierarchy';
-    }
-    else {
-      $this->termDataTable = 'term_data';
-      $this->termHierarchyTable = 'term_hierarchy';
-    }
+    $this->termDataTable = 'term_data';
+    $this->termHierarchyTable = 'term_hierarchy';
 
     $query = $this->select($this->termDataTable, 'td')
       ->fields('td')
       ->distinct()
-      ->orderBy('td.tid');
+      ->orderBy('tid');
 
     if (isset($this->configuration['vocabulary'])) {
-      $query->condition('td.vid', $this->configuration['vocabulary'], 'IN');
+      $query->condition('vid', $this->configuration['vocabulary'], 'IN');
     }
 
     return $query;
@@ -68,9 +62,6 @@ class Term extends DrupalSqlBase {
       'weight' => $this->t('Weight'),
       'parent' => $this->t("The Drupal term IDs of the term's parents."),
     );
-    if ($this->getModuleSchemaVersion('taxonomy') >= 7000) {
-      $fields['format'] = $this->t('Format of the term description.');
-    }
     return $fields;
   }
 
