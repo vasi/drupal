@@ -19,4 +19,12 @@ interface MigrateIdAuditInterface {
    */
   public function unsafeIdsExist(MigrateIdMapInterface $idMap);
 
+  /**
+   * Get the type ID of the entities this destination creates.
+   *
+   * @return string
+   *   The type ID, eg: 'node'.
+   */
+  public function entityTypeId();
+
 }

@@ -127,4 +127,18 @@ class EntityUser extends EntityContentBase {
     }
   }
 
+  /**
+   * {@inheritdoc}
+   */
+  protected function highestDestinationId() {
+    $found = parent::highestDestinationId();
+
+    // Every Drupal site must have at least a single non-anonymous user, and
+    // it's normal for upgrade migrations to overwrite this user.
+    if ($found == 1) {
+      return 0;
+    }
+    return $found;
+  }
+
 }

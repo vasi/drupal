@@ -30,3 +30,5 @@ services:
   plugin.manager.migration:
     class: Drupal\migrate\Plugin\MigrationPluginManager
     arguments: ['@module_handler', '@cache.discovery_migration', '@language_manager']
+  migrate.id_auditor:
+    class: Drupal\migrate\MigrateIdAuditor

@@ -78,4 +78,11 @@ class EntityRevision extends EntityContentBase {
     throw new MigrateException('This entity type does not support revisions.');
   }
 
+  /**
+   * {@inheritdoc}
+   */
+  public function getHighestIdField() {
+    return $this->getKey('revision');
+  }
+
 }

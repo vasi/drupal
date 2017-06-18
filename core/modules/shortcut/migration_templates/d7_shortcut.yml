@@ -20,6 +20,7 @@ process:
       - link_path
 destination:
   plugin: entity:shortcut
+  preserves_ids: false
 migration_dependencies:
   required:
     - d7_shortcut_set

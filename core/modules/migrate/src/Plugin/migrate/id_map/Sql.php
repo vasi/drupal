@@ -6,7 +6,7 @@ use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Plugin\PluginBase;
-use Drupal\migrate\Plugin\MigrateHighestMigratedIdInterface;
+use Drupal\migrate\Plugin\MigrateMaxIdInterface;
 use Drupal\migrate\Plugin\MigrationInterface;
 use Drupal\migrate\Event\MigrateIdMapMessageEvent;
 use Drupal\migrate\MigrateException;
@@ -27,7 +27,7 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
  *
  * @PluginID("sql")
  */
-class Sql extends PluginBase implements MigrateIdMapInterface, ContainerFactoryPluginInterface, MigrateHighestMigratedIdInterface {
+class Sql extends PluginBase implements MigrateIdMapInterface, ContainerFactoryPluginInterface, MigrateMaxIdInterface {
 
   /**
    * Column name of hashed source id values.
@@ -927,12 +927,19 @@ class Sql extends PluginBase implements MigrateIdMapInterface, ContainerFactoryP
   /**
    * {@inheritdoc}
    */
-  public function highestMigratedId() {
-    $idField = reset($this->destinationIdFields());
+  public function getMaxId($field) {
+    if (!$this->getDatabase()->schema()->tableExists($this->mapTableName())) {
+      return 0;
+    }
+
+    $sqlField = $this->destinationIdFields()[$field];
+
     $query = $this->getDatabase()->select($this->mapTableName(), 'map')
-      ->fields($this->mapTableName(), [$idField])
-      ->orderBy($idField, 'DESC');
-    return (int)($query->execute()->fetchField());
+      ->fields('map', [$sqlField])
+      ->orderBy($sqlField, 'DESC')
+      ->range(0, 1);
+    $found = $query->execute()->fetchField();
+    return (int)$found;
   }
 
 }

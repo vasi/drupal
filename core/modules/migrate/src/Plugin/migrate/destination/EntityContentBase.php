@@ -9,7 +9,7 @@ use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Field\FieldTypePluginManagerInterface;
 use Drupal\Core\TypedData\TranslatableInterface;
 use Drupal\Core\TypedData\TypedDataInterface;
-use Drupal\migrate\Plugin\MigrateHighestMigratedIdInterface;
+use Drupal\migrate\Plugin\MigrateMaxIdInterface;
 use Drupal\migrate\Plugin\MigrateIdAuditInterface;
 use Drupal\migrate\Plugin\MigrationInterface;
 use Drupal\migrate\MigrateException;
@@ -20,10 +20,11 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 /**
  * The destination class for all content entities lacking a specific class.
  *
- * Configuration settings include:
+ * Configuration options:
  *
- *   - stable_id: Set to true if this destination will create entities with IDs
- *     that may conflict with auto-increment IDs.
+ *   - preserves_ids: If set to FALSE, indicates that IDs are not preserved
+ *     by this migration. This means that the source ID and the destination
+ *     ID will not be identical.
  */
 class EntityContentBase extends Entity implements MigrateIdAuditInterface {
 
@@ -302,41 +303,64 @@ class EntityContentBase extends Entity implements MigrateIdAuditInterface {
    * This is not the highest ID that has been migrated, but the highest ID
    * that exists in the destination, eg: highest node ID on the site.
    *
-   * @param int
+   * @return int
    *   The highest ID value found. If no IDs at all are found, or if the
    *   concept of a highest ID is not meaningful, zero should be returned.
    */
   protected function highestDestinationId() {
     $query = $this->storage->getQuery()
-      ->sort($this->getKey('id'))
+      ->sort($this->getKey('id'), 'DESC')
       ->range(0, 1);
-    return (int)reset($query->execute());
+    $found = $query->execute();
+    return (int)reset($found);
   }
 
   /**
-   * {@inheritdoc}
+   * Get the ID subfield that contains the highest ID migrated by this
+   * destination.
    *
-   * This check will be enabled only if the destination configuration has
-   * 'stable_id' true.
+   * @return string
+   *   The field name.
+   */
+  protected function getHighestIdField() {
+    return $this->getKey('id');
+  }
+
+  /**
+   * Check whether unsafe IDs exist that should inhibit migration.
+   *
+   * @param \Drupal\migrate\Plugin\MigrateIdMapInterface $idMap
+   *   The ID map for this migration.
+   *
+   * @return bool
+   *   Whether unsafe IDs exist.
    */
   public function unsafeIdsExist(MigrateIdMapInterface $idMap) {
-    if (empty($this->configuration['stable_id'])) {
-      // We'll create auto-increment IDs, not stable IDs, so conflicts should
-      // not occur.
+    if (isset($this->configuration['preserves_ids'])
+      && !$this->configuration['preserves_ids']
+    ) {
+      // If IDs are not preserved, we can't have conflicts.
       return FALSE;
     }
 
-    if (!($idMap instanceof MigrateHighestMigratedIdInterface)) {
+    if (!($idMap instanceof MigrateMaxIdInterface)) {
       // We don't know how to audit IDs without a cooperating ID map.
       return FALSE;
     }
 
-    $highestMigrated = $idMap->highestMigratedId();
+    $highestMigrated = $idMap->getMaxId($this->getHighestIdField());
     if ($this->highestDestinationId() > $highestMigrated) {
       // There's a new ID that we might conflict with!
       return TRUE;
     }
     return FALSE;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function entityTypeId() {
+    return $this->storage->getEntityTypeId();
   }
 
 }

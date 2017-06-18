@@ -949,7 +949,7 @@ class MigrateUpgradeForm extends ConfirmFormBase {
       '#type' => 'submit',
       '#value' => $this->t('Review upgrade'),
       '#button_type' => 'primary',
-      '#validate' => ['::validateCredentialForm'],
+      '#validate' => ['::validateCredentialForm', '::validateMigrationIds'],
       '#submit' => ['::submitCredentialForm'],
     ];
     return $form;
@@ -1022,6 +1022,31 @@ class MigrateUpgradeForm extends ConfirmFormBase {
       ];
       $form_state->setErrorByName($database['driver'] . '][0', $this->renderer->renderPlain($error_message));
     }
+  }
+
+  /**
+   * Validate that IDs are not at risk of conflicts.
+   *
+   * Many migrations add items with specific IDs to collections which
+   * normally use autoincrement IDs, which can cause conflicts.
+   *
+   * For example, a migration may intend to migrate a node with nid 3. If a
+   * user has already created some nodes, one might have already received nid
+   * 3, which would cause a conflict.
+   *
+   * @param array $form
+   *   An associative array containing the structure of the form.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The current state of the form.
+   */
+  public function validateMigrationIds(array &$form, FormStateInterface $form_state) {
+    // FIXME: Inject
+    $migrationIds = array_keys($form_state->get('migrations'));
+    $migrations = \Drupal::service('plugin.manager.migration')->createInstances($migrationIds);
+
+    $auditor = \Drupal::service('migrate.id_auditor');
+    $types = $auditor->auditIds($migrations);
+    var_dump($types);
   }
 
   /**
