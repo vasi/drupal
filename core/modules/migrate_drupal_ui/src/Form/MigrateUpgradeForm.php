@@ -3,11 +3,13 @@
 namespace Drupal\migrate_drupal_ui\Form;
 
 use Drupal\Core\Datetime\DateFormatterInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\ConfirmFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\RendererInterface;
 use Drupal\Core\State\StateInterface;
 use Drupal\Core\Url;
+use Drupal\migrate\MigrateIdAuditor;
 use Drupal\migrate\Plugin\MigrationPluginManagerInterface;
 use Drupal\migrate_drupal_ui\Batch\MigrateUpgradeImportBatch;
 use Drupal\migrate_drupal\MigrationConfigurationTrait;
@@ -709,6 +711,20 @@ class MigrateUpgradeForm extends ConfirmFormBase {
   protected $pluginManager;
 
   /**
+   * The entity type manager.
+   *
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
+   */
+  protected $entityTypeManager;
+
+  /**
+   * The ID conflict auditor.
+   *
+   * @var \Drupal\migrate\MigrateIdAuditor $idAuditor
+   */
+  protected $idAuditor;
+
+  /**
    * Constructs the MigrateUpgradeForm.
    *
    * @param \Drupal\Core\State\StateInterface $state
@@ -719,12 +735,18 @@ class MigrateUpgradeForm extends ConfirmFormBase {
    *   The renderer service.
    * @param \Drupal\migrate\Plugin\MigrationPluginManagerInterface $plugin_manager
    *   The migration plugin manager.
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
+   *   The entity type manager.
+   * @param \Drupal\migrate\MigrateIdAuditor $idAuditor
+   *   The ID conflict auditor.
    */
-  public function __construct(StateInterface $state, DateFormatterInterface $date_formatter, RendererInterface $renderer, MigrationPluginManagerInterface $plugin_manager) {
+  public function __construct(StateInterface $state, DateFormatterInterface $date_formatter, RendererInterface $renderer, MigrationPluginManagerInterface $plugin_manager, EntityTypeManagerInterface $entityTypeManager, MigrateIdAuditor $idAuditor) {
     $this->state = $state;
     $this->dateFormatter = $date_formatter;
     $this->renderer = $renderer;
     $this->pluginManager = $plugin_manager;
+    $this->entityTypeManager = $entityTypeManager;
+    $this->idAuditor = $idAuditor;
   }
 
   /**
@@ -735,7 +757,9 @@ class MigrateUpgradeForm extends ConfirmFormBase {
       $container->get('state'),
       $container->get('date.formatter'),
       $container->get('renderer'),
-      $container->get('plugin.manager.migration')
+      $container->get('plugin.manager.migration'),
+      $container->get('entity_type.manager'),
+      $container->get('migrate.id_auditor')
     );
   }
 
@@ -757,6 +781,9 @@ class MigrateUpgradeForm extends ConfirmFormBase {
 
       case 'credentials':
         return $this->buildCredentialForm($form, $form_state);
+
+      case 'confirm_id_conflicts':
+        return $this->buildIdConflictForm($form, $form_state);
 
       case 'confirm':
         return $this->buildConfirmForm($form, $form_state);
@@ -949,7 +976,7 @@ class MigrateUpgradeForm extends ConfirmFormBase {
       '#type' => 'submit',
       '#value' => $this->t('Review upgrade'),
       '#button_type' => 'primary',
-      '#validate' => ['::validateCredentialForm', '::validateMigrationIds'],
+      '#validate' => ['::validateCredentialForm'],
       '#submit' => ['::submitCredentialForm'],
     ];
     return $form;
@@ -1025,31 +1052,6 @@ class MigrateUpgradeForm extends ConfirmFormBase {
   }
 
   /**
-   * Validate that IDs are not at risk of conflicts.
-   *
-   * Many migrations add items with specific IDs to collections which
-   * normally use autoincrement IDs, which can cause conflicts.
-   *
-   * For example, a migration may intend to migrate a node with nid 3. If a
-   * user has already created some nodes, one might have already received nid
-   * 3, which would cause a conflict.
-   *
-   * @param array $form
-   *   An associative array containing the structure of the form.
-   * @param \Drupal\Core\Form\FormStateInterface $form_state
-   *   The current state of the form.
-   */
-  public function validateMigrationIds(array &$form, FormStateInterface $form_state) {
-    // FIXME: Inject
-    $migrationIds = array_keys($form_state->get('migrations'));
-    $migrations = \Drupal::service('plugin.manager.migration')->createInstances($migrationIds);
-
-    $auditor = \Drupal::service('migrate.id_auditor');
-    $types = $auditor->auditIds($migrations);
-    var_dump($types);
-  }
-
-  /**
    * Submission handler for the credentials form.
    *
    * @param array $form
@@ -1059,6 +1061,64 @@ class MigrateUpgradeForm extends ConfirmFormBase {
    */
   public function submitCredentialForm(array &$form, FormStateInterface $form_state) {
     // Indicate the next step is confirmation.
+    $form_state->set('step', 'confirm_id_conflicts');
+    $form_state->setRebuild();
+  }
+
+  /**
+   * Confirmation form for ID conflicts.
+   *
+   * @param array $form
+   *   An associative array containing the structure of the form.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The current state of the form.
+   *
+   * @return array
+   *   The form structure.
+   */
+  public function buildIdConflictForm(array &$form, FormStateInterface $form_state) {
+    // Check if there are conflicts. If none, just skip this form!
+    $migrationIds = array_keys($form_state->get('migrations'));
+    $migrations = $this->pluginManager->createInstances($migrationIds);
+    $typeIds = $this->idAuditor->auditIds($migrations);
+    if (empty($typeIds)) {
+      $form_state->set('step', 'confirm');
+      return $this->buildForm($form, $form_state);
+    }
+
+    $form = parent::buildForm($form, $form_state);
+    $form['actions']['submit']['#submit'] = ['::submitConfirmIdConflictForm'];
+    $form['actions']['submit']['#value'] = $this->t('I acknowledge I may lose data, continue anyway');
+
+    $form['warning'] = [
+      '#type' => 'markup',
+      '#markup' => '<h3>' . $this->t('Entities may be overwritten') . '</h3>' .
+        '<p>' . $this->t('Upgrades work on brand new sites, or sites with previously upgraded data. However, it looks like you have added other entities to your site, perhaps manually. These new entities <strong>may be overwritten</strong> if you run this upgrade.') . '</p>',
+    ];
+
+    $items = [];
+    sort($typeIds);
+    foreach ($typeIds as $typeId) {
+      $items[] = $this->entityTypeManager->getDefinition($typeId)->getLabel();
+    }
+    $form['type_list'] = [
+      '#title' => $this->t('These entities are of the following types:'),
+      '#theme' => 'item_list',
+      '#items' => $items,
+    ];
+
+    return $form;
+  }
+
+  /**
+   * Submission handler for the confirmation form.
+   *
+   * @param array $form
+   *   An associative array containing the structure of the form.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The current state of the form.
+   */
+  public function submitConfirmIdConflictForm(array &$form, FormStateInterface $form_state) {
     $form_state->set('step', 'confirm');
     $form_state->setRebuild();
   }
