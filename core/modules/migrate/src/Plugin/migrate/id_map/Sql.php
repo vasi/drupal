@@ -6,6 +6,7 @@ use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Plugin\PluginBase;
+use Drupal\migrate\Plugin\MigrateHighestMigratedIdInterface;
 use Drupal\migrate\Plugin\MigrationInterface;
 use Drupal\migrate\Event\MigrateIdMapMessageEvent;
 use Drupal\migrate\MigrateException;
@@ -26,7 +27,7 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
  *
  * @PluginID("sql")
  */
-class Sql extends PluginBase implements MigrateIdMapInterface, ContainerFactoryPluginInterface {
+class Sql extends PluginBase implements MigrateIdMapInterface, ContainerFactoryPluginInterface, MigrateHighestMigratedIdInterface {
 
   /**
    * Column name of hashed source id values.
@@ -921,6 +922,17 @@ class Sql extends PluginBase implements MigrateIdMapInterface, ContainerFactoryP
    */
   public function valid() {
     return $this->currentRow !== FALSE;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function highestMigratedId() {
+    $idField = reset($this->destinationIdFields());
+    $query = $this->getDatabase()->select($this->mapTableName(), 'map')
+      ->fields($this->mapTableName(), [$idField])
+      ->orderBy($idField, 'DESC');
+    return (int)($query->execute()->fetchField());
   }
 
 }

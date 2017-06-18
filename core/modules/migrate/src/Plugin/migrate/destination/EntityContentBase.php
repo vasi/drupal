@@ -9,6 +9,8 @@ use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Field\FieldTypePluginManagerInterface;
 use Drupal\Core\TypedData\TranslatableInterface;
 use Drupal\Core\TypedData\TypedDataInterface;
+use Drupal\migrate\Plugin\MigrateHighestMigratedIdInterface;
+use Drupal\migrate\Plugin\MigrateIdAuditInterface;
 use Drupal\migrate\Plugin\MigrationInterface;
 use Drupal\migrate\MigrateException;
 use Drupal\migrate\Plugin\MigrateIdMapInterface;
@@ -17,8 +19,13 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * The destination class for all content entities lacking a specific class.
+ *
+ * Configuration settings include:
+ *
+ *   - stable_id: Set to true if this destination will create entities with IDs
+ *     that may conflict with auto-increment IDs.
  */
-class EntityContentBase extends Entity {
+class EntityContentBase extends Entity implements MigrateIdAuditInterface {
 
   /**
    * Entity manager.
@@ -287,6 +294,49 @@ class EntityContentBase extends Entity {
     return [
       'type' => $field_definition->getType(),
     ] + $field_definition->getSettings();
+  }
+
+  /**
+   * Get the highest ID that exists for this destination.
+   *
+   * This is not the highest ID that has been migrated, but the highest ID
+   * that exists in the destination, eg: highest node ID on the site.
+   *
+   * @param int
+   *   The highest ID value found. If no IDs at all are found, or if the
+   *   concept of a highest ID is not meaningful, zero should be returned.
+   */
+  protected function highestDestinationId() {
+    $query = $this->storage->getQuery()
+      ->sort($this->getKey('id'))
+      ->range(0, 1);
+    return (int)reset($query->execute());
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * This check will be enabled only if the destination configuration has
+   * 'stable_id' true.
+   */
+  public function unsafeIdsExist(MigrateIdMapInterface $idMap) {
+    if (empty($this->configuration['stable_id'])) {
+      // We'll create auto-increment IDs, not stable IDs, so conflicts should
+      // not occur.
+      return FALSE;
+    }
+
+    if (!($idMap instanceof MigrateHighestMigratedIdInterface)) {
+      // We don't know how to audit IDs without a cooperating ID map.
+      return FALSE;
+    }
+
+    $highestMigrated = $idMap->highestMigratedId();
+    if ($this->highestDestinationId() > $highestMigrated) {
+      // There's a new ID that we might conflict with!
+      return TRUE;
+    }
+    return FALSE;
   }
 
 }
